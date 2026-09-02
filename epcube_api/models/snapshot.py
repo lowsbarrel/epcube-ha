@@ -51,7 +51,7 @@ class Snapshot(EpCubeModel):
 
     @property
     def battery_power_w(self) -> float | None:
-        """Battery power in watts, from the best source available.
+        """Battery power in watts, positive = charging, from the best source.
 
         Prefers the series, which reports it directly; falls back to the live
         snapshot's derived value, which carries sampling noise.
@@ -66,12 +66,39 @@ class Snapshot(EpCubeModel):
     def battery_soc(self) -> int | None:
         return self.live.battery_soc
 
+    @property
+    def solar_power_w(self) -> float | None:
+        """Total PV power in watts, from the best source available.
+
+        `homeDeviceInfo.solarPower` is *not* usable as total production: on a
+        live system it read 49 W while the per-string endpoint reported 1052 W
+        and the series reported 1.05 kW for the same fresh timestamp. Those two
+        agree with each other exactly, so they win; the live field is the last
+        resort.
+        """
+        if self.series is not None:
+            latest = self.series.latest()
+            if latest is not None and latest.node_vo.solar_power_w is not None:
+                return latest.node_vo.solar_power_w
+        if self.pv is not None and self.pv.active:
+            return self.pv.total_power_w
+        return self.live.solar_power
+
+    @property
+    def solar_power_source(self) -> str:
+        """Which source `solar_power_w` used."""
+        if self.series is not None and self.series.latest() is not None:
+            return "series"
+        if self.pv is not None and self.pv.active:
+            return "pv_strings"
+        return "live"
+
     def summary_line(self) -> str:
         """A one-line human summary, for logs and CLI output."""
         mode = self.live.mode
         parts = [
             f"SoC {self.battery_soc}%" if self.battery_soc is not None else "SoC ?",
-            f"solar {self.live.solar_power:.0f}W" if self.live.solar_power is not None else "",
+            f"solar {self.solar_power_w:.0f}W" if self.solar_power_w is not None else "",
             f"grid {self.live.grid_power:.0f}W" if self.live.grid_power is not None else "",
             f"load {self.live.load_power:.0f}W" if self.live.load_power is not None else "",
         ]

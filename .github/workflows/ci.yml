@@ -66,6 +66,27 @@ jobs:
       - name: Verify (secret scan + lint + types + test)
         run: sh scripts/verify.sh
 
+  # Home Assistant's own manifest/quality checks. Catches a malformed manifest,
+  # a missing translation key, or a version that does not parse - none of which
+  # the Python toolchain would notice.
+  hassfest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: home-assistant/actions/hassfest@4b258cf2bf1668d8e0adcb6b2be96b6cda36f42f # v1.0.0
+
+  # HACS validation: what a user installing from HACS needs to be present.
+  hacs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: hacs/action@d556e736723344f83838d08488c983a15381059a # 22.5.0
+        with:
+          category: integration
+          # The repo is private, so the brand//image checks against the public
+          # HACS index cannot resolve it.
+          ignore: brands
+
   # Single required check: the branch ruleset requires only `ci`, and this gate
   # depends on every blocking job. Add a new required job to `needs` here (one
   # home) and it blocks merges automatically - no ruleset edit, no repo-setup.sh
@@ -73,12 +94,12 @@ jobs:
   # required check can otherwise be reported to branch protection as passing.
   ci:
     if: ${{ always() }}
-    needs: [conventions, verify]
+    needs: [conventions, verify, hassfest, hacs]
     runs-on: ubuntu-latest
     steps:
       - name: All required jobs succeeded
         run: |
-          for r in "${{ needs.conventions.result }}" "${{ needs.verify.result }}"; do
+          for r in "${{ needs.conventions.result }}" "${{ needs.verify.result }}" "${{ needs.hassfest.result }}" "${{ needs.hacs.result }}"; do
             case "$r" in
               success | skipped) ;;
               *) echo "required job did not succeed: $r"; exit 1 ;;

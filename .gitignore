@@ -38,3 +38,7 @@ SETUP-CHECKLIST.md
 .ruff_cache/
 .ty_cache/
 *.egg-info/
+
+# Release artifacts
+epcube.zip
+dist/

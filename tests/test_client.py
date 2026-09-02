@@ -119,9 +119,10 @@ async def test_series_reports_battery_power_directly(client):
     assert series.granularity == "five minutes"
     latest = series.latest()
     assert latest.node_name == "09:45"
-    # kW on the wire, watts through the accessor
+    # kW on the wire; the accessor converts to watts and flips the sign so
+    # positive means charging (see test_battery_power_is_positive_when_charging)
     assert latest.reading.battery_power == -0.30
-    assert latest.reading.battery_power_w == pytest.approx(-300.0)
+    assert latest.reading.battery_power_w == pytest.approx(300.0)
 
 
 async def test_series_drops_placeholder_points(client):
@@ -290,7 +291,7 @@ async def test_snapshot_gathers_every_section(client):
 async def test_snapshot_prefers_measured_battery_power(client):
     snap = await client.snapshot(SN)
     # from the series, not derived from the live snapshot's flows
-    assert snap.battery_power_w == pytest.approx(-300.0)
+    assert snap.battery_power_w == pytest.approx(300.0)
 
 
 async def test_snapshot_falls_back_to_derived_battery_power(client):
@@ -314,3 +315,32 @@ async def test_snapshot_survives_a_failing_supplementary_route(recorder: Recorde
 async def test_snapshot_resolves_the_serial_from_the_account(client):
     snap = await client.snapshot()
     assert snap.dev_id == DEV_ID
+
+
+# --- sign and source conventions --------------------------------------------
+
+
+async def test_battery_power_is_positive_when_charging(client):
+    """The API sends negative for charging; everything here uses positive.
+
+    Established from the energy balance on a real system: solar + grid - load +
+    battery == 0 only holds with the API's negative-is-charging convention.
+    """
+    series = await client.data.series(DEV_ID, Scope.DAY, date(2026, 9, 2))
+    reading = series.latest().reading
+    assert reading.battery_power == -0.30  # raw, as sent
+    assert reading.battery_power_w == pytest.approx(300.0)  # normalised
+
+
+async def test_snapshot_prefers_a_trustworthy_solar_source(client):
+    snap = await client.snapshot(SN)
+    # the series agrees with the per-string endpoint; live.solar_power does not
+    assert snap.solar_power_source == "series"
+    assert snap.solar_power_w == pytest.approx(610.0)
+    assert snap.live.solar_power == 51.0
+
+
+async def test_solar_falls_back_to_pv_strings_without_a_series(client):
+    snap = await client.snapshot(SN, include_series=False)
+    assert snap.solar_power_source == "pv_strings"
+    assert snap.solar_power_w == pytest.approx(610.0)

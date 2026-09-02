@@ -87,10 +87,15 @@ class SeriesReading(_EnergyFields):
     non_back_up_power: ApiFloat = None
     back_up_power: ApiFloat = None
     battery_power: ApiFloat = None
-    """Signed battery power, kW. Negative = discharging, positive = charging.
+    """Battery power as the API sends it, kW: **negative = charging**.
 
-    Reported directly, so it needs none of the subtraction (and none of the
-    resulting noise) that `LiveSnapshot.battery_power` requires.
+    Established from the energy balance, which closes only with this sign:
+    `solar + grid - load + battery == 0`. At 11:05 on a real system that was
+    `1.05 + 0.00 - 0.11 + (-0.94) = 0.00` while the state of charge climbed.
+
+    This is the opposite of `battery_power_w` and of `LiveSnapshot.battery_power`,
+    both of which use positive = charging. Prefer those unless you specifically
+    want the raw value.
     """
     battery_soc: ApiInt = None
 
@@ -119,7 +124,14 @@ class SeriesReading(_EnergyFields):
 
     @property
     def battery_power_w(self) -> float | None:
-        return self._watts(self.battery_power)
+        """Battery power in watts, **positive = charging**.
+
+        Negated relative to the raw field, so that every battery power in this
+        package shares one convention.
+        """
+        if self.battery_power is None:
+            return None
+        return -self.battery_power * 1000.0
 
     @property
     def load_power_w(self) -> float | None:

@@ -1,0 +1,12 @@
+{
+  "domain": "epcube",
+  "name": "EP Cube",
+  "codeowners": ["@lowsbarrel"],
+  "config_flow": true,
+  "documentation": "https://github.com/lowsbarrel/epcube-ha",
+  "integration_type": "device",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/lowsbarrel/epcube-ha/issues",
+  "requirements": ["epcube-api==0.1.0"],
+  "version": "0.1.0"
+}
