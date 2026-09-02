@@ -1,4 +1,4 @@
-# EP Cube API — endpoint inventory
+# EP Cube API endpoint inventory
 
 Extracted from the official Android app, `com.eternalplanetenergy.epcube` 2.5.1,
 with `tools/extract_apk_endpoints.py`. Routes are stored Retrofit-style (no
@@ -14,7 +14,7 @@ real account · **[?]** present in the app, not yet tested.
 
 ## The interesting finds
 
-### `device/queryDataGraphV2` **[✓]** — time series, the one that draws the app's graphs
+### `device/queryDataGraphV2` **[✓]**: time series, the one that draws the app's graphs
 
 Params: `devId`, `queryDateStr`, `scopeType`.
 
@@ -28,7 +28,7 @@ Params: `devId`, `queryDateStr`, `scopeType`.
 Each point is `{"nodeName": "09:45", "scopeType": "1", "nodeVo": {...35 fields}}`.
 `nodeName` is the time/date label; `nodeVo` carries the readings.
 
-**`nodeVo` includes `batteryPower` and `batterySoc`** — so battery charge/discharge
+**`nodeVo` includes `batteryPower` and `batterySoc`**, so battery charge/discharge
 power *is* available from the API, per 5-minute interval. The integration derives
 it by subtraction instead, which is why it needs `BATTERY_POWER_DEADBAND_KW` to
 mask the arithmetic noise. This endpoint gives it directly.
@@ -36,17 +36,17 @@ mask the arithmetic noise. This endpoint gives it directly.
 Also per point: grid import/export, solar (AC/DC split), battery charge/discharge
 energy, backup and non-backup loads, EV, generator, and the flow-direction fields.
 
-### `device/getSolarPvPower` **[✓]** — per-string PV telemetry
+### `device/getSolarPvPower` **[✓]**: per-string PV telemetry
 
-Voltage, current and power for **PV1–PV4 individually**. Nothing else in the API
+Voltage, current and power for **PV1 to PV4 individually**. Nothing else in the API
 exposes this. Useful for spotting a shaded or failing string.
 
-### `device/getDevPowerCutLog` **[✓]** — grid outage history
+### `device/getDevPowerCutLog` **[✓]**: grid outage history
 
 Every outage with `startTime`, `endTime` and `duration`. The live data only has a
 count (`gridPowerFailureNum`); this has the actual events.
 
-### `device/netWorkInfo` **[✓]** — connectivity
+### `device/netWorkInfo` **[✓]**: connectivity
 
 `wifiName`, `wifiStatus`, `wifiStatusStr`, `signalLevel`.
 
@@ -82,7 +82,7 @@ editRemotePrivilege           netWorkInfo           [✓]     upgrade
 `[404]`/`[500]`/`[405]` = tested and rejected as called; most likely need
 different parameters or a POST body rather than being absent.
 
-## vpp/ (20) — virtual power plant / grid services **[?]**
+## vpp/ (20): virtual power plant and grid services **[?]**
 
 ```
 allPrograms          energyhub/event        enrollments        site/program
@@ -96,7 +96,7 @@ enrollment           globalEnrollmentStatus regist
 Entirely unexplored. `flip/getGlobalSoc` and `flip/updateSoc` suggest remote SoC
 control by a grid operator.
 
-## open/ (12) — unauthenticated
+## open/ (12): unauthenticated
 
 ```
 common/captcha/check   [HA]   common/getOssDownloadLink   common/uploadImg/avatar
@@ -106,7 +106,7 @@ common/checkMailCode          common/resetPwd
 common/getEmailCode
 ```
 
-`common/visitorsLogin` — a guest/demo login worth a look.
+`common/visitorsLogin` is a guest or demo login worth a look.
 
 ## user/ (9)
 

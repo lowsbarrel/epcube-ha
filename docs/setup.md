@@ -4,7 +4,7 @@
 
 ### HACS
 
-The repository ships releases only — HACS never offers the default branch
+The repository ships releases only. HACS never offers the default branch
 (`hide_default_branch` in `hacs.json`), so you always get a tagged, verified
 build.
 
@@ -32,17 +32,17 @@ Assistant's environment.
 
 You need two things: the **region** and a **token**.
 
-**Region is not cosmetic.** An account exists on exactly one cluster — EU, US or
+**Region is not cosmetic.** An account exists on exactly one cluster: EU, US or
 JP. A token minted against the wrong one is rejected as *"User token expired"*,
 identical to a genuinely expired token. If setup fails with an auth error and you
 are sure of the credentials, try another region before anything else.
 
 **Token.** The config flow offers two paths:
 
-- *Sign in with email and password* — available only when the CAPTCHA solver's
+- *Sign in with email and password*, available only when the CAPTCHA solver's
   dependencies are importable. The login endpoint is guarded by a slide puzzle,
   which is solved locally and occasionally needs a second attempt.
-- *Paste an access token* — always available. Mint one with the CLI below, or
+- *Paste an access token*, always available. Mint one with the CLI below, or
   from any tool that produces an EP Cube Bearer token.
 
 Tokens expire. When one does, the integration raises a reauth flow and Home
@@ -71,7 +71,7 @@ Then wire the commit gate once:
 git config core.hooksPath .githooks
 ```
 
-`sh scripts/verify.sh` is the whole bar — secret scan, ruff, ty, pytest. The hook
+`sh scripts/verify.sh` is the whole bar: secret scan, ruff, ty, pytest. The hook
 and CI run exactly that script, so a green local run predicts a green PR. See
 [testing.md](testing.md).
 
@@ -86,5 +86,5 @@ obvious slips in the hook and in CI.
 
 Be aware that the API returns the owner's name, postal address, GPS coordinates
 and email on several endpoints. `epcube status --json` and a raw `probe` will
-show all of it — the integration's diagnostics download redacts it, but a
+show all of it. The integration's diagnostics download redacts it, but a
 hand-made dump does not.

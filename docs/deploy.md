@@ -9,7 +9,7 @@ Trunk-based, and deliberately plain: one long-lived branch, `main`.
 - There is **no staging branch, no develop branch, no release branch.** A release
   is a tag on `main`, nothing more.
 - The default-branch ruleset requires a PR with the `ci` check green. Repo admins
-  can bypass it, so a solo maintainer is never locked out — but that is the
+  can bypass it, so a solo maintainer is never locked out, but that is the
   exception, not the workflow.
 
 ## CI
@@ -25,7 +25,7 @@ Trunk-based, and deliberately plain: one long-lived branch, `main`.
 | `ci` | the aggregate gate |
 
 `ci` is the **single required status check** in the ruleset, and it `needs` every
-blocking job. Adding a new required job means adding it to that `needs` list —
+blocking job. Adding a new required job means adding it to that `needs` list:
 one home, no ruleset edit, no re-running `repo-setup.sh`.
 
 ## Releasing
@@ -58,7 +58,7 @@ notes. A `workflow_dispatch` run can rebuild an existing tag.
 absolute imports rewritten to relative ones.
 
 It exists because the integration imports `epcube_api`, which is not published to
-PyPI — a bare copy of the source folder would fail to load. Bundling keeps the
+PyPI, so a bare copy of the source folder would fail to load. Bundling keeps the
 source with **one home** (`epcube_api/`) while making the artifact
 self-contained: the only thing Home Assistant installs is `pydantic`, since httpx
 already ships with it.
@@ -77,8 +77,8 @@ alone.
 
 ## Repo policy as code
 
-- [`.github/rulesets/main.json`](../.github/rulesets/main.json) — the
+- [`.github/rulesets/main.json`](../.github/rulesets/main.json) is the
   default-branch ruleset: PRs required, `ci` must pass.
-- [`.github/repo-setup.sh`](../.github/repo-setup.sh) — squash-only merges, PR
-  title as the squash subject, branches auto-deleted, ruleset applied.
+- [`.github/repo-setup.sh`](../.github/repo-setup.sh) applies squash-only merges,
+  the PR title as the squash subject, branch auto-deletion, and the ruleset.
   Idempotent; run once as an admin.

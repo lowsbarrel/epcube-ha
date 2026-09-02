@@ -240,7 +240,7 @@ def cmd_routes(args: argparse.Namespace, _: dict[str, str]) -> int:
             if args.wrapped and not route.wrapped:
                 continue
             wrapper = f"client.{route.wrapper}" if route.wrapper else ""
-            note = f"  — {route.note}" if route.note else ""
+            note = f"  ({route.note})" if route.note else ""
             print(f"  {marks[route.verified]} {route.path:<44} {wrapper}{note}")
         print()
     return 0
