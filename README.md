@@ -4,7 +4,7 @@
 
 **A Home Assistant integration for EP Cube home batteries, on a client that reaches the whole API.**
 
-The official app talks to an undocumented cloud API. This reads that API properly — including the parts no other integration touches: five-minute history, per-string solar telemetry, and a measured battery power reading.
+The official app talks to an undocumented cloud API. This reads that API properly, including the parts no other integration touches: five-minute history, per-string solar telemetry, and a measured battery power reading.
 
 [![CI](https://github.com/lowsbarrel/epcube-ha/actions/workflows/ci.yml/badge.svg)](https://github.com/lowsbarrel/epcube-ha/actions/workflows/ci.yml)
 ![Home Assistant](https://img.shields.io/badge/Home_Assistant-41BDF5?logo=homeassistant&logoColor=white)
@@ -15,8 +15,9 @@ The official app talks to an undocumented cloud API. This reads that API properl
 ![Ruff](https://img.shields.io/badge/Ruff-D7FF64?logo=ruff&logoColor=black)
 ![ty](https://img.shields.io/badge/ty-type_checked-261230)
 ![pytest](https://img.shields.io/badge/pytest-0A9EDC?logo=pytest&logoColor=white)
+[![License](https://img.shields.io/badge/License-MIT-blue)](LICENSE)
 
-[Install](#quickstart) · [What you get](#what-the-integration-gives-you) · [The client](#the-client) · [API reference](docs/api-endpoints.md) · [All docs](#documentation)
+[Install](#quickstart) · [What you get](#what-the-integration-gives-you) · [The client](#the-client) · [API reference](docs/api-endpoints.md) · [All docs](#documentation) · [License](#license)
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=lowsbarrel&repository=epcube-ha&category=integration)
 
@@ -30,22 +31,22 @@ Two things, in one repo.
 
 **A Home Assistant integration.** Config flow, a single coordinator, sensors for every flow and counter, controls for the operating mode and reserve levels, and redacted diagnostics. Cloud polling, one device, no YAML.
 
-**A complete Python client for the API underneath it.** `epcube_api` is async, fully typed, and pydantic-modelled end to end. It is useful on its own — there is a CLI — and the integration is a thin layer over it.
+**A complete Python client for the API underneath it.** `epcube_api` is async, fully typed, and pydantic-modelled end to end. It is useful on its own, and it has a CLI. The integration is a thin layer over it.
 
 The API surface was recovered by pulling the routes out of the Android app and exercising them against a real system. That turned up **118 routes**, several of which nothing else reaches:
 
 | Route | What it gives you |
 | --- | --- |
-| `device/queryDataGraphV2` | **Time series** — one reading every five minutes since midnight, carrying `batteryPower` directly instead of leaving it to be inferred |
-| `device/getSolarPvPower` | **Per-string PV telemetry** — voltage, current and power for each MPPT input, so a shaded or failing string is visible |
+| `device/queryDataGraphV2` | **Time series.** One reading every five minutes since midnight, carrying `batteryPower` directly instead of leaving it to be inferred |
+| `device/getSolarPvPower` | **Per-string PV telemetry.** Voltage, current and power for each MPPT input, so a shaded or failing string is visible |
 | `device/getDevPowerCutLog` | **Grid outage history**, with start, end and duration for every event |
 | `device/netWorkInfo` | Wi-Fi SSID, signal level, connection state |
 
 ## Quickstart
 
-**HACS** (recommended) — click the button above, or add `lowsbarrel/epcube-ha` as a custom repository of type *Integration*. Then **Settings → Devices & Services → Add Integration → EP Cube**.
+**HACS** (recommended). Click the button above, or add `lowsbarrel/epcube-ha` as a custom repository of type *Integration*. Then **Settings → Devices & Services → Add Integration → EP Cube**.
 
-**Manually** — copy `custom_components/epcube/` into your `config/custom_components/` and restart.
+**Manually.** Copy `custom_components/epcube/` into your `config/custom_components/` and restart.
 
 Setup asks for a region and either a token or your app credentials:
 
@@ -66,7 +67,7 @@ Setup asks for a region and either a token or your app credentials:
 
 Everything is fed by one coordinator, so entity count costs no extra requests.
 
-**Battery power is measured, not guessed.** The live endpoint doesn't report it, so every other integration infers it by subtracting solar and grid from load — arithmetic that carries tens of watts of noise even at rest. The time series reports it directly, and the sensor says which source it used in its `source` attribute.
+**Battery power is measured, not guessed.** The live endpoint doesn't report it, so every other integration infers it by subtracting solar and grid from load, arithmetic that carries tens of watts of noise even at rest. The time series reports it directly, and the sensor says which source it used in its `source` attribute.
 
 ## The client
 
@@ -117,7 +118,7 @@ Also: `epcube series` (curves at any scope), `epcube pv`, `epcube routes` (the w
 
 `device/switchMode` treats a field that is **absent** from the payload as *reset this to default*. Send `{"devId": …, "workStatus": "3"}` to switch to backup mode and the device also loses its entire tariff calendar and both reserve levels.
 
-So a write is a model, never a dict — it declares every field the endpoint understands and serialises with `exclude_none=False`, which makes a partial payload unrepresentable:
+So a write is a model, never a dict. It declares every field the endpoint understands and serialises with `exclude_none=False`, which makes a partial payload unrepresentable:
 
 ```python
 config = await client.device.mode(dev_id)
@@ -130,11 +131,11 @@ await client.device.switch_mode(request)
 | Layer | Choice |
 | --- | --- |
 | HTTP | `httpx`, async, with retry and both of the API's error layers handled |
-| Models | pydantic v2 — camelCase aliases, coercions for the API's string-typed numbers |
+| Models | pydantic v2, with camelCase aliases and coercions for the API's string-typed numbers |
 | Integration | Coordinator + `runtime_data`, config flow with reauth, entity translations |
 | Lint & format | Ruff |
 | Types | ty |
-| Tests | pytest over `httpx.MockTransport` — no network, no credentials |
+| Tests | pytest over `httpx.MockTransport`, so no network and no credentials |
 | CI | Conventional Commits, secret scan, the verification bar, hassfest, HACS validation |
 | Packaging | uv, with a lockfile CI installs frozen |
 
@@ -143,7 +144,7 @@ await client.device.switch_mode(request)
 | Path | What's in it |
 | --- | --- |
 | `custom_components/epcube/` | The Home Assistant integration |
-| `epcube_api/` | The client — `models/`, `endpoints/`, `transport.py`, `cli.py` |
+| `epcube_api/` | The client: `models/`, `endpoints/`, `transport.py`, `cli.py` |
 | `epcube_api/registry.py` | Every discovered route, and whether it has a wrapper |
 | `docs/api-endpoints.md` | The prose inventory, and what's verified against real hardware |
 | `tools/extract_apk_endpoints.py` | How the route list was recovered from the APK |
@@ -153,10 +154,10 @@ await client.device.switch_mode(request)
 
 ```sh
 uv sync --all-extras
-sh scripts/verify.sh     # secret scan + ruff + ty + pytest — the "done" bar
+sh scripts/verify.sh     # the "done" bar: secret scan + ruff + ty + pytest
 ```
 
-The pre-commit hook and CI run exactly that, so a green local run predicts a green PR. Work happens on short-lived branches off `main` and lands through squash-merged pull requests — there is no staging branch and no release branch.
+The pre-commit hook and CI run exactly that, so a green local run predicts a green PR. Work happens on short-lived branches off `main` and lands through squash-merged pull requests. There is no staging branch and no release branch.
 
 ## Documentation
 
@@ -172,6 +173,10 @@ The pre-commit hook and CI run exactly that, so a green local run predicts a gre
 
 ## Requirements
 
-Home Assistant 2024.12+ · Python 3.12+ · an EP Cube account.
+Home Assistant 2025.2+ · Python 3.13+ · an EP Cube account.
+
+## License
+
+[MIT](LICENSE). Use it, fork it, ship it. If you extend the API coverage, contributing it back saves the next person another APK teardown.
 
 Unofficial, and unaffiliated with EP Cube, Canadian Solar or CSI Solar. The API is undocumented and may change without notice.

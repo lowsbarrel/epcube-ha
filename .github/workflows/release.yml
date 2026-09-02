@@ -70,3 +70,19 @@ jobs:
             --title "$TAG" \
             --generate-notes \
             --verify-tag
+
+  # HACS installability is a property of a *release*, not of a branch: with
+  # zip_release set, HACS reads the integration manifest out of the published
+  # zip. Validating before one exists reports a missing manifest, so the check
+  # runs here, once the release is up.
+  validate-hacs:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: hacs/action@d556e736723344f83838d08488c983a15381059a # 22.5.0
+        with:
+          category: integration
+          # The repo is private, so the brands/images check cannot resolve it
+          # against the public HACS index.
+          ignore: brands

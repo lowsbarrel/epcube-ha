@@ -11,7 +11,7 @@
       },
       "token": {
         "title": "Access token",
-        "description": "Paste a Bearer token for your EP Cube account. Pick the region your account belongs to — an account exists on exactly one, and a token from the wrong one fails as though it had expired.",
+        "description": "Paste a Bearer token for your EP Cube account. Pick the region your account belongs to. An account exists on exactly one, and a token from the wrong one fails as though it had expired.",
         "data": {
           "region": "Region",
           "token": "Access token"
@@ -35,7 +35,7 @@
       }
     },
     "error": {
-      "invalid_auth": "Token rejected. It may have expired, or it may belong to a different region — check the region before replacing it.",
+      "invalid_auth": "Token rejected. It may have expired, or it may belong to a different region. Check the region before replacing it.",
       "cannot_connect": "Could not reach the EP Cube service.",
       "captcha_failed": "Could not complete sign-in. The puzzle CAPTCHA fails intermittently; try again.",
       "no_device": "That account has no system attached to it."

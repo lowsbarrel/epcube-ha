@@ -24,7 +24,7 @@ installable).
 ## The offline suite
 
 `tests/` runs the real client against `httpx.MockTransport`. No network, no
-credentials, no recorded cassettes to rot — the fixtures are written by hand from
+credentials, no recorded cassettes to rot. The fixtures are written by hand from
 observed payloads.
 
 They deliberately preserve the API's quirks:
@@ -63,7 +63,7 @@ uv run epcube series --scope month --field solar_electricity
 uv run epcube probe device/getAssetData --param devId=1234
 ```
 
-`epcube probe` is for routes with no wrapper yet — see
+`epcube probe` is for routes with no wrapper yet; see
 [api-endpoints.md](api-endpoints.md). A 404 means the route does not exist; a 500
 usually means it does exist and the parameters are wrong.
 
@@ -86,8 +86,8 @@ Add the integration at <http://localhost:8123>, then check the entity states.
 Look for `unknown` or `unavailable`: against a healthy system every entity should
 carry a value, and the coordinator should log `success: True` on each interval.
 
-Cross-check anything suspicious against `epcube status` and the raw payload —
-that is how both of the above were caught.
+Cross-check anything suspicious against `epcube status` and the raw payload.
+That is how both of the above were caught.
 
 ## Writing tests
 
