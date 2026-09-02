@@ -15,7 +15,25 @@ sh scripts/verify.sh
 | `check-secrets` | zero-dependency scan | credentials about to be committed |
 | `lint` | `ruff check` + `ruff format --check` | style, import order, common bugs |
 | `types` | `ty` | wrong types, bad overrides, misuse of the Home Assistant API |
-| `test` | `pytest` | behaviour |
+| `test` | `pytest` | behaviour, at **100% statement and branch coverage** |
+
+Coverage is part of the bar rather than an optional extra. `epcube_api` is the
+only thing between Home Assistant and an undocumented API, and an untested
+branch there fails quietly on someone's battery. `--cov-fail-under=100` in
+`pyproject.toml` enforces it, branch coverage included, so a new `if` without a
+test for both sides fails the commit.
+
+Two exclusions, both deliberate: the `if __name__ == "__main__"` console-script
+guard, and `if TYPE_CHECKING` import blocks. Neither runs under test.
+
+Reaching 100% found four real bugs that nothing else had:
+
+- the coercers passed unrecognised values through to pydantic, so a single odd
+  field would fail validation and take the **entire** response down
+- `asyncio.iscoroutinefunction` is deprecated and slated for removal
+- `load_env()` sat outside the CLI's try block, so an interrupt there escaped
+  unhandled
+- `SwitchModeRequest.api_dump` restated its base rather than calling it
 
 CI adds two checks the Python toolchain cannot do: **hassfest** (manifest and
 translation validity) and **HACS validation** (that the repository is

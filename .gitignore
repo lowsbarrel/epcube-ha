@@ -42,3 +42,9 @@ SETUP-CHECKLIST.md
 # Release artifacts
 epcube.zip
 dist/
+
+# Coverage output
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/

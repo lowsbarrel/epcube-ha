@@ -225,7 +225,7 @@ class SwitchModeRequest(EpCubeRequest):
         `ev_charger_reserve_soc` is the one exception: the endpoint only accepts
         it in Time-of-Use mode, so it is dropped when unset rather than sent null.
         """
-        payload = self.model_dump(by_alias=True, exclude_none=False)
+        payload = super().api_dump()
         if payload.get("evChargerReserveSoc") is None:
             payload.pop("evChargerReserveSoc", None)
         return payload

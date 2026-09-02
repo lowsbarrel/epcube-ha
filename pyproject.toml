@@ -29,6 +29,7 @@ dev = [
     "pytest-asyncio>=0.24",
     "respx>=0.21",
     "homeassistant",
+    "pytest-cov",
 ]
 
 [build-system]
@@ -41,7 +42,23 @@ packages = ["epcube_api"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
-addopts = "-q"
+# Coverage is part of the bar, not an optional extra: the client is the only
+# thing standing between Home Assistant and an undocumented API, and an
+# untested branch there fails silently on someone's battery.
+addopts = "-q --cov=epcube_api --cov-report=term-missing --cov-fail-under=100"
+
+[tool.coverage.run]
+branch = true
+source = ["epcube_api"]
+
+[tool.coverage.report]
+show_missing = true
+exclude_also = [
+    # The console-script guard: exercised by running the command, not by tests.
+    "if __name__ == .__main__.:",
+    # Import guards for typing only.
+    "if TYPE_CHECKING:",
+]
 
 [tool.ruff]
 line-length = 100
