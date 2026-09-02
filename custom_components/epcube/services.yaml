@@ -1,0 +1,116 @@
+set_tou_schedule:
+  target:
+    device:
+      integration: epcube
+  fields:
+    peak:
+      required: false
+      example: '[{start: "08:00", end: "12:00", price: 0.31}]'
+      selector:
+        object:
+    mid_peak:
+      required: false
+      example: '[{start: "12:00", end: "18:00", price: 0.22}]'
+      selector:
+        object:
+    off_peak:
+      required: false
+      example: '[{start: "22:00", end: "08:00", price: 0.12}]'
+      selector:
+        object:
+    peak_non_workday:
+      required: false
+      selector:
+        object:
+    mid_peak_non_workday:
+      required: false
+      selector:
+        object:
+    off_peak_non_workday:
+      required: false
+      selector:
+        object:
+    apply:
+      required: false
+      default: false
+      selector:
+        boolean:
+
+set_operating_mode:
+  target:
+    device:
+      integration: epcube
+  fields:
+    mode:
+      required: true
+      selector:
+        select:
+          translation_key: operating_mode
+          options:
+            - self_consumption
+            - time_of_use
+            - backup
+    reserve_soc:
+      required: false
+      selector:
+        number:
+          min: 0
+          max: 100
+          unit_of_measurement: "%"
+          mode: slider
+
+force_charge:
+  target:
+    device:
+      integration: epcube
+  fields:
+    target_soc:
+      required: true
+      example: 80
+      selector:
+        number:
+          min: 0
+          max: 100
+          unit_of_measurement: "%"
+          mode: slider
+    duration:
+      required: false
+      example: "02:00:00"
+      selector:
+        duration:
+
+force_discharge:
+  target:
+    device:
+      integration: epcube
+  fields:
+    target_soc:
+      required: true
+      example: 30
+      selector:
+        number:
+          min: 0
+          max: 100
+          unit_of_measurement: "%"
+          mode: slider
+    duration:
+      required: false
+      example: "02:00:00"
+      selector:
+        duration:
+
+hold_battery:
+  target:
+    device:
+      integration: epcube
+  fields:
+    duration:
+      required: false
+      example: "04:00:00"
+      selector:
+        duration:
+
+clear_override:
+  target:
+    device:
+      integration: epcube

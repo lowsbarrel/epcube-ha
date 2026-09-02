@@ -323,3 +323,40 @@ async def test_the_client_exposes_its_call_history(client):
     await client.account.base()
     assert [call.path for call in client.calls] == ["user/user/base"]
     assert client.calls[0].ok
+
+
+# --- tou schedule ----------------------------------------------------------
+
+
+async def test_set_tou_schedule_saves_without_changing_mode(client, recorder: Recorder):
+    from epcube_api import TouWindow
+
+    config = await client.device.mode(DEV_ID)
+    await client.device.set_tou_schedule(
+        config,
+        peak=[TouWindow(start="09:00", end="11:00", price=0.5)],
+        off_peak=["23:00_07:00_0.1"],
+    )
+    body = recorder.body("device/switchMode")
+    assert body["onlySave"] == "1"
+    assert body["workStatus"] == "1"  # unchanged
+    assert body["peakTimeList"] == ["09:00_11:00_0.5"]
+    assert body["offPeakTimeList"] == ["23:00_07:00_0.1"]
+    # lists not mentioned keep what the device had
+    assert body["midPeakTimeList"] == []
+
+
+async def test_set_tou_schedule_can_also_switch_mode(client, recorder: Recorder):
+    config = await client.device.mode(DEV_ID)
+    await client.device.set_tou_schedule(config, peak=["08:00_12:00_0.3"], apply=True)
+    body = recorder.body("device/switchMode")
+    assert body["onlySave"] == "0"
+    assert body["workStatus"] == "2"
+
+
+async def test_set_tou_schedule_preserves_the_reserve_levels(client, recorder: Recorder):
+    config = await client.device.mode(DEV_ID)
+    await client.device.set_tou_schedule(config, peak=[])
+    body = recorder.body("device/switchMode")
+    assert body["selfConsumptioinReserveSoc"] == "15"
+    assert body["backupPowerReserveSoc"] == "100"
