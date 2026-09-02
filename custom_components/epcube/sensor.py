@@ -232,6 +232,7 @@ async def async_setup_entry(
     entities: list[SensorEntity] = [
         EpCubeSensor(coordinator, description) for description in SENSORS
     ]
+    entities.append(EpCubeOverrideSensor(coordinator))
 
     # PV strings: the API does not declare how many inputs exist, so create one
     # set of entities per string actually reported at setup.
@@ -327,3 +328,34 @@ class EpCubePvSensor(EpCubeEntity, SensorEntity):
         if self._measure == "power":
             return string.power_w
         return getattr(string, self._measure)
+
+
+class EpCubeOverrideSensor(EpCubeEntity, SensorEntity):
+    """Which temporary override is running, if any.
+
+    Without this an override is invisible: the reserve slider simply moves and
+    nothing says why, or when it will move back.
+    """
+
+    _attr_translation_key = "override"
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator: EpCubeCoordinator) -> None:
+        super().__init__(coordinator, "override")
+        self._attr_options = ["none", "charge", "discharge", "hold"]
+
+    @property
+    def native_value(self) -> str:
+        override = self.coordinator.overrides.active
+        return override.kind if override else "none"
+
+    @property
+    def extra_state_attributes(self) -> dict[str, str] | None:
+        override = self.coordinator.overrides.active
+        if override is None:
+            return None
+        return {
+            "target_soc": str(override.target_soc),
+            "ends_at": override.ends_at.isoformat() if override.ends_at else "manual",
+        }

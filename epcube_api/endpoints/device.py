@@ -15,6 +15,7 @@ from ..models import (
     OutageEvent,
     PvStrings,
     SwitchModeRequest,
+    TouWindow,
     Warranty,
 )
 from .base import EndpointGroup, parse_list, parse_model
@@ -148,3 +149,37 @@ class DeviceEndpoints(EndpointGroup):
         return await self.switch_mode(
             request.with_changes(allow_charging_from_grid="1" if allowed else "0")
         )
+
+    async def set_tou_schedule(
+        self,
+        config: ModeConfig,
+        *,
+        peak: list[TouWindow] | list[str] | None = None,
+        mid_peak: list[TouWindow] | list[str] | None = None,
+        off_peak: list[TouWindow] | list[str] | None = None,
+        peak_non_workday: list[TouWindow] | list[str] | None = None,
+        mid_peak_non_workday: list[TouWindow] | list[str] | None = None,
+        off_peak_non_workday: list[TouWindow] | list[str] | None = None,
+        apply: bool = False,
+        dev_id: str | None = None,
+    ) -> Any:
+        """Replace the tariff calendar.
+
+        Lists left as None keep their current value; pass an empty list to clear
+        one deliberately. `apply` also switches the device into Time-of-Use mode;
+        without it the calendar is saved and the operating mode is untouched.
+        """
+        request = SwitchModeRequest.from_config(
+            config,
+            dev_id=dev_id,
+            work_status=WorkMode.TIME_OF_USE if apply else None,
+            only_save=not apply,
+        ).set_tou_schedule(
+            peak=peak,
+            mid_peak=mid_peak,
+            off_peak=off_peak,
+            peak_non_workday=peak_non_workday,
+            mid_peak_non_workday=mid_peak_non_workday,
+            off_peak_non_workday=off_peak_non_workday,
+        )
+        return await self.switch_mode(request)

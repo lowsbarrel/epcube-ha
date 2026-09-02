@@ -150,3 +150,28 @@ The app is a native Kotlin app using Retrofit; route strings sit in the `.dex`
 string tables in plain UTF-8, so no decompiler is needed. Repository class names
 in the same tables (`DeviceRepositoryImpl$queryDataGraphV2$1`) confirm which
 routes are actually called and under what method name.
+
+---
+
+## Known write limitation
+
+`allowChargingXiaGrid` is **read-only** on the hardware this was developed
+against (EU cluster, EP Cube HES-EU2-S7-15G, firmware V1.3.0). Four payload
+shapes were tried:
+
+| Attempt | Result |
+| --- | --- |
+| `onlySave=1`, string `"0"` | accepted, ignored |
+| `onlySave=0`, string `"0"` | accepted, ignored |
+| integer `0` instead of a string | accepted, ignored |
+| `allowChargingViaGrid` alongside the misspelled key | accepted, ignored |
+
+Every one returned HTTP 200 with `data: null`, and `getSwitchMode` continued to
+report the old value 37 seconds later. `selfConsumptioinReserveSoc` written in
+the *same* payload applied immediately, so this is the one field being refused
+rather than the write failing.
+
+It may be writable on other firmware, in other regions, or before an installer
+locks the grid-connection settings. The integration therefore still offers the
+switch, but reads the value back and raises if the device did not take it, and
+the battery-override services do not touch the field at all.

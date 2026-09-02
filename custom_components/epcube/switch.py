@@ -1,4 +1,16 @@
-"""Grid-charging toggle."""
+"""Grid-charging toggle.
+
+The device may refuse this one. On the hardware this was developed against,
+`allowChargingXiaGrid` is read-only: the API accepts a write with HTTP 200 and
+then reports the old value forever. Four payload shapes were tried (`onlySave`
+0 and 1, string and integer, and the correctly-spelled key alongside the API's
+own misspelling); none took effect.
+
+Rather than present a toggle that silently does nothing, the switch reads the
+value back after writing and raises if the device did not take it. Where the
+field *is* writable the switch behaves normally; where it is not, the user gets
+told instead of being quietly ignored.
+"""
 
 from __future__ import annotations
 
@@ -51,6 +63,14 @@ class EpCubeGridChargingSwitch(EpCubeSectionEntity, SwitchEntity):
             raise HomeAssistantError(
                 translation_domain=DOMAIN, translation_key="config_unavailable"
             )
+
         await self.coordinator.async_apply(
             self.coordinator.client.device.set_grid_charging(config, allowed)
         )
+
+        # async_apply refreshed already, so this reads what the device now says.
+        applied = self.snapshot.mode
+        if applied is not None and applied.grid_charging_allowed is not allowed:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key="grid_charging_rejected"
+            )

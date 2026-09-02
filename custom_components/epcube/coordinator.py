@@ -36,6 +36,7 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
 )
+from .override import OverrideManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -72,6 +73,8 @@ class EpCubeCoordinator(DataUpdateCoordinator[Snapshot]):
                 seconds=options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
             ),
         )
+
+        self.overrides = OverrideManager(hass, self)
 
     async def _async_update_data(self) -> Snapshot:
         try:

@@ -70,28 +70,82 @@
     },
     "no_tou_schedule": {
       "message": "No time-of-use periods are configured. Switching to that mode now would leave the battery on an empty tariff calendar."
+    },
+    "soc_unknown": {
+      "message": "The battery level is not known yet, so the current level cannot be held."
+    },
+    "target_soc_required": {
+      "message": "A target battery level is required."
+    },
+    "device_not_found": {
+      "message": "No such device: {device_id}."
+    },
+    "device_not_loaded": {
+      "message": "The EP Cube system for device {device_id} is not loaded."
+    },
+    "bad_tou_window": {
+      "message": "{window} in {field} is not a valid time-of-use window. Use HH:MM_HH:MM_price, or a mapping with start, end and price."
+    },
+    "grid_charging_rejected": {
+      "message": "The device did not accept the change to grid charging. On some units this setting is read-only, locked by the installer or by grid-connection rules."
     }
   },
   "entity": {
     "sensor": {
-      "solar_power": { "name": "Solar power" },
-      "grid_power": { "name": "Grid power" },
-      "load_power": { "name": "House load" },
-      "backup_power": { "name": "Backup load" },
-      "non_backup_power": { "name": "Non-backup load" },
-      "battery_power": { "name": "Battery power" },
-      "battery_soc": { "name": "Battery" },
-      "battery_energy": { "name": "Battery energy" },
-      "solar_today": { "name": "Solar today" },
-      "backup_today": { "name": "Backup load today" },
-      "grid_import_today": { "name": "Grid import today" },
-      "grid_export_today": { "name": "Grid export today" },
-      "battery_charged_today": { "name": "Battery charged today" },
-      "battery_discharged_today": { "name": "Battery discharged today" },
-      "solar_lifetime": { "name": "Solar total" },
-      "grid_import_lifetime": { "name": "Grid import total" },
-      "grid_export_lifetime": { "name": "Grid export total" },
-      "self_sufficiency": { "name": "Self-sufficiency" },
+      "solar_power": {
+        "name": "Solar power"
+      },
+      "grid_power": {
+        "name": "Grid power"
+      },
+      "load_power": {
+        "name": "House load"
+      },
+      "backup_power": {
+        "name": "Backup load"
+      },
+      "non_backup_power": {
+        "name": "Non-backup load"
+      },
+      "battery_power": {
+        "name": "Battery power"
+      },
+      "battery_soc": {
+        "name": "Battery"
+      },
+      "battery_energy": {
+        "name": "Battery energy"
+      },
+      "solar_today": {
+        "name": "Solar today"
+      },
+      "backup_today": {
+        "name": "Backup load today"
+      },
+      "grid_import_today": {
+        "name": "Grid import today"
+      },
+      "grid_export_today": {
+        "name": "Grid export today"
+      },
+      "battery_charged_today": {
+        "name": "Battery charged today"
+      },
+      "battery_discharged_today": {
+        "name": "Battery discharged today"
+      },
+      "solar_lifetime": {
+        "name": "Solar total"
+      },
+      "grid_import_lifetime": {
+        "name": "Grid import total"
+      },
+      "grid_export_lifetime": {
+        "name": "Grid export total"
+      },
+      "self_sufficiency": {
+        "name": "Self-sufficiency"
+      },
       "operating_mode": {
         "name": "Operating mode",
         "state": {
@@ -101,20 +155,53 @@
           "unknown": "Unknown"
         }
       },
-      "signal_level": { "name": "Signal level" },
-      "outage_count": { "name": "Grid outages" },
-      "last_outage": { "name": "Last grid outage" },
-      "last_connected": { "name": "Last connected" },
-      "wifi_ssid": { "name": "Wi-Fi network" },
-      "pv_string_power": { "name": "PV string {index} power" },
-      "pv_string_voltage": { "name": "PV string {index} voltage" },
-      "pv_string_current": { "name": "PV string {index} current" }
+      "signal_level": {
+        "name": "Signal level"
+      },
+      "outage_count": {
+        "name": "Grid outages"
+      },
+      "last_outage": {
+        "name": "Last grid outage"
+      },
+      "last_connected": {
+        "name": "Last connected"
+      },
+      "wifi_ssid": {
+        "name": "Wi-Fi network"
+      },
+      "pv_string_power": {
+        "name": "PV string {index} power"
+      },
+      "pv_string_voltage": {
+        "name": "PV string {index} voltage"
+      },
+      "pv_string_current": {
+        "name": "PV string {index} current"
+      },
+      "override": {
+        "name": "Battery override",
+        "state": {
+          "none": "None",
+          "charge": "Forced charge",
+          "discharge": "Forced discharge",
+          "hold": "Held"
+        }
+      }
     },
     "binary_sensor": {
-      "online": { "name": "Online" },
-      "fault": { "name": "Fault" },
-      "alert": { "name": "Alert" },
-      "grid_outage": { "name": "Grid outage" }
+      "online": {
+        "name": "Online"
+      },
+      "fault": {
+        "name": "Fault"
+      },
+      "alert": {
+        "name": "Alert"
+      },
+      "grid_outage": {
+        "name": "Grid outage"
+      }
     },
     "select": {
       "operating_mode": {
@@ -127,11 +214,17 @@
       }
     },
     "number": {
-      "self_consumption_reserve": { "name": "Self-consumption reserve" },
-      "backup_reserve": { "name": "Backup reserve" }
+      "self_consumption_reserve": {
+        "name": "Self-consumption reserve"
+      },
+      "backup_reserve": {
+        "name": "Backup reserve"
+      }
     },
     "switch": {
-      "grid_charging": { "name": "Charge from grid" }
+      "grid_charging": {
+        "name": "Charge from grid"
+      }
     }
   },
   "selector": {
@@ -140,6 +233,131 @@
         "eu": "Europe",
         "us": "United States",
         "jp": "Japan"
+      }
+    },
+    "operating_mode": {
+      "options": {
+        "self_consumption": "Self-consumption",
+        "time_of_use": "Time of use",
+        "backup": "Backup"
+      }
+    }
+  },
+  "services": {
+    "set_tou_schedule": {
+      "name": "Set time-of-use schedule",
+      "description": "Writes the tariff calendar. Lists left out keep their current value; pass an empty list to clear one.",
+      "fields": {
+        "peak": {
+          "name": "Peak windows",
+          "description": "Windows charged at the peak rate."
+        },
+        "mid_peak": {
+          "name": "Mid-peak windows",
+          "description": "Windows at the mid rate."
+        },
+        "off_peak": {
+          "name": "Off-peak windows",
+          "description": "Windows at the cheapest rate, when the battery prefers to charge."
+        },
+        "peak_non_workday": {
+          "name": "Peak windows (non-workdays)",
+          "description": "Peak windows for weekends and holidays."
+        },
+        "mid_peak_non_workday": {
+          "name": "Mid-peak windows (non-workdays)",
+          "description": "Mid-peak windows for weekends and holidays."
+        },
+        "off_peak_non_workday": {
+          "name": "Off-peak windows (non-workdays)",
+          "description": "Off-peak windows for weekends and holidays."
+        },
+        "apply": {
+          "name": "Switch to Time of Use",
+          "description": "Also put the device into Time-of-Use mode. Off by default, so the calendar is saved without changing how the battery is running."
+        },
+        "device_id": {
+          "name": "Device",
+          "description": "The EP Cube system to act on."
+        }
+      }
+    },
+    "set_operating_mode": {
+      "name": "Set operating mode",
+      "description": "Changes the operating mode, optionally setting that mode's reserve too.",
+      "fields": {
+        "mode": {
+          "name": "Mode",
+          "description": "The mode to switch to."
+        },
+        "reserve_soc": {
+          "name": "Reserve level",
+          "description": "Battery level to hold in reserve. Applies to the mode being selected: the backup reserve for Backup, otherwise the self-consumption reserve."
+        },
+        "device_id": {
+          "name": "Device",
+          "description": "The EP Cube system to act on."
+        }
+      }
+    },
+    "force_charge": {
+      "name": "Force charge",
+      "description": "Charges the battery to a target level by raising the reserve. The previous reserve is restored when the duration elapses.",
+      "fields": {
+        "target_soc": {
+          "name": "Target level",
+          "description": "Charge until the battery reaches this level."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "How long to hold the override. Left empty it runs until cleared, which is worth avoiding: nothing will put the settings back."
+        },
+        "device_id": {
+          "name": "Device",
+          "description": "The EP Cube system to act on."
+        }
+      }
+    },
+    "force_discharge": {
+      "name": "Force discharge",
+      "description": "Lets the battery supply the house down to a target level by lowering the reserve. The previous reserve is restored afterwards.",
+      "fields": {
+        "target_soc": {
+          "name": "Target level",
+          "description": "Discharge no further than this level."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "How long to hold the override."
+        },
+        "device_id": {
+          "name": "Device",
+          "description": "The EP Cube system to act on."
+        }
+      }
+    },
+    "hold_battery": {
+      "name": "Hold battery",
+      "description": "Freezes the battery at its current level by setting the reserve to match it, so it will not discharge below where it is now.",
+      "fields": {
+        "duration": {
+          "name": "Duration",
+          "description": "How long to hold it."
+        },
+        "device_id": {
+          "name": "Device",
+          "description": "The EP Cube system to act on."
+        }
+      }
+    },
+    "clear_override": {
+      "name": "Clear override",
+      "description": "Ends any override now and restores the settings from before it.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The EP Cube system to act on."
+        }
       }
     }
   }

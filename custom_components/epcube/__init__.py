@@ -8,8 +8,9 @@ from __future__ import annotations
 
 from homeassistant.core import HomeAssistant
 
-from .const import PLATFORMS
+from .const import DOMAIN, PLATFORMS
 from .coordinator import EpCubeConfigEntry, EpCubeCoordinator
+from .services import async_register_services, async_unregister_services
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: EpCubeConfigEntry) -> bool:
@@ -18,8 +19,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: EpCubeConfigEntry) -> bo
     await coordinator.async_config_entry_first_refresh()
 
     entry.runtime_data = coordinator
+
+    # After the first refresh: reverting a stale override needs device state.
+    await coordinator.overrides.async_load()
+
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
+    async_register_services(hass)
     return True
 
 
@@ -27,7 +33,12 @@ async def async_unload_entry(hass: HomeAssistant, entry: EpCubeConfigEntry) -> b
     """Unload a config entry."""
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unloaded:
+        entry.runtime_data.overrides.async_unload()
         await entry.runtime_data.client.aclose()
+        # Services belong to the integration, not the entry: drop them only when
+        # the last system goes away.
+        if not hass.config_entries.async_loaded_entries(DOMAIN):
+            async_unregister_services(hass)
     return unloaded
 
 
