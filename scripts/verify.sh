@@ -7,13 +7,13 @@ echo "verify ▸ check-secrets"
 sh scripts/check-secrets.sh
 
 echo "verify ▸ lint"
-uv run --frozen ruff check .
-uv run --frozen ruff format --check .
+uv run --locked ruff check .
+uv run --locked ruff format --check .
 
 echo "verify ▸ types"
-uv run --frozen ty check
+uv run --locked ty check
 
 echo "verify ▸ test"
-uv run --frozen pytest
+uv run --locked pytest
 
 echo "✓ verify - all checks passed"

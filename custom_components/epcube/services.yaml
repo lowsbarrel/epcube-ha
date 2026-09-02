@@ -1,8 +1,13 @@
+# Home Assistant does not allow a `target:` device filter on a service, so the
+# device is an ordinary field carrying a device selector instead.
+
 set_tou_schedule:
-  target:
-    device:
-      integration: epcube
   fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: epcube
     peak:
       required: false
       example: '[{start: "08:00", end: "12:00", price: 0.31}]'
@@ -37,10 +42,12 @@ set_tou_schedule:
         boolean:
 
 set_operating_mode:
-  target:
-    device:
-      integration: epcube
   fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: epcube
     mode:
       required: true
       selector:
@@ -60,10 +67,12 @@ set_operating_mode:
           mode: slider
 
 force_charge:
-  target:
-    device:
-      integration: epcube
   fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: epcube
     target_soc:
       required: true
       example: 80
@@ -80,10 +89,12 @@ force_charge:
         duration:
 
 force_discharge:
-  target:
-    device:
-      integration: epcube
   fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: epcube
     target_soc:
       required: true
       example: 30
@@ -100,10 +111,12 @@ force_discharge:
         duration:
 
 hold_battery:
-  target:
-    device:
-      integration: epcube
   fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: epcube
     duration:
       required: false
       example: "04:00:00"
@@ -111,6 +124,9 @@ hold_battery:
         duration:
 
 clear_override:
-  target:
-    device:
-      integration: epcube
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: epcube

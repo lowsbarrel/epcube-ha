@@ -84,7 +84,7 @@
       "message": "The EP Cube system for device {device_id} is not loaded."
     },
     "bad_tou_window": {
-      "message": "'{window}' in {field} is not a valid time-of-use window. Use HH:MM_HH:MM_price, or a mapping with start, end and price."
+      "message": "{window} in {field} is not a valid time-of-use window. Use HH:MM_HH:MM_price, or a mapping with start, end and price."
     },
     "grid_charging_rejected": {
       "message": "The device did not accept the change to grid charging. On some units this setting is read-only, locked by the installer or by grid-connection rules."
@@ -275,6 +275,10 @@
         "apply": {
           "name": "Switch to Time of Use",
           "description": "Also put the device into Time-of-Use mode. Off by default, so the calendar is saved without changing how the battery is running."
+        },
+        "device_id": {
+          "name": "Device",
+          "description": "The EP Cube system to act on."
         }
       }
     },
@@ -289,6 +293,10 @@
         "reserve_soc": {
           "name": "Reserve level",
           "description": "Battery level to hold in reserve. Applies to the mode being selected: the backup reserve for Backup, otherwise the self-consumption reserve."
+        },
+        "device_id": {
+          "name": "Device",
+          "description": "The EP Cube system to act on."
         }
       }
     },
@@ -303,6 +311,10 @@
         "duration": {
           "name": "Duration",
           "description": "How long to hold the override. Left empty it runs until cleared, which is worth avoiding: nothing will put the settings back."
+        },
+        "device_id": {
+          "name": "Device",
+          "description": "The EP Cube system to act on."
         }
       }
     },
@@ -317,6 +329,10 @@
         "duration": {
           "name": "Duration",
           "description": "How long to hold the override."
+        },
+        "device_id": {
+          "name": "Device",
+          "description": "The EP Cube system to act on."
         }
       }
     },
@@ -327,12 +343,22 @@
         "duration": {
           "name": "Duration",
           "description": "How long to hold it."
+        },
+        "device_id": {
+          "name": "Device",
+          "description": "The EP Cube system to act on."
         }
       }
     },
     "clear_override": {
       "name": "Clear override",
-      "description": "Ends any override now and restores the settings from before it."
+      "description": "Ends any override now and restores the settings from before it.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The EP Cube system to act on."
+        }
+      }
     }
   }
 }

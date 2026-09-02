@@ -59,10 +59,11 @@ jobs:
       - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           enable-cache: true
-      # --frozen everywhere below: CI installs exactly what uv.lock pins, and
-      # fails rather than silently resolving something newer.
+      # --locked, not --frozen: this also fails if uv.lock has drifted from
+      # pyproject.toml, so a dependency added without re-locking is caught here
+      # rather than resolving differently on someone else's machine.
       - name: Install dependencies
-        run: uv sync --frozen --all-extras
+        run: uv sync --locked --all-extras
       - name: Verify (secret scan + lint + types + test)
         run: sh scripts/verify.sh
 
