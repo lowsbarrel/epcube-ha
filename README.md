@@ -15,6 +15,7 @@ The official app talks to an undocumented cloud API. This reads that API properl
 ![Ruff](https://img.shields.io/badge/Ruff-D7FF64?logo=ruff&logoColor=black)
 ![ty](https://img.shields.io/badge/ty-type_checked-261230)
 ![pytest](https://img.shields.io/badge/pytest-0A9EDC?logo=pytest&logoColor=white)
+![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
 [![License](https://img.shields.io/badge/License-MIT-blue)](LICENSE)
 
 [Install](#quickstart) · [What you get](#what-the-integration-gives-you) · [The client](#the-client) · [API reference](docs/api-endpoints.md) · [All docs](#documentation) · [License](#license)
@@ -135,7 +136,7 @@ await client.device.switch_mode(request)
 | Integration | Coordinator + `runtime_data`, config flow with reauth, entity translations |
 | Lint & format | Ruff |
 | Types | ty |
-| Tests | pytest over `httpx.MockTransport`, so no network and no credentials |
+| Tests | pytest over `httpx.MockTransport`, so no network and no credentials. 100% statement and branch coverage, enforced |
 | CI | Conventional Commits, secret scan, the verification bar, hassfest, HACS validation |
 | Packaging | uv, with a lockfile CI installs frozen |
 

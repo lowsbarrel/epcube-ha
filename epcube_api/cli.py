@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import inspect
 import json
 import os
 from datetime import date, datetime
@@ -108,7 +109,10 @@ async def cmd_status(args: argparse.Namespace, env: dict[str, str]) -> int:
         if snap.battery_power_w is not None:
             source = "measured" if snap.series else "derived"
             row("battery power", f"{snap.battery_power_w:+.0f} W  ({source})")
-        row("solar", f"{live.solar_power} W")
+        if snap.solar_power_w is not None:
+            # Not live.solar_power: that field is not total PV production, and
+            # printing it here disagreed with the summary line above it.
+            row("solar", f"{snap.solar_power_w:.0f} W  ({snap.solar_power_source})")
         row("grid", f"{live.grid_power} W")
         row("house load", f"{live.load_power} W")
         if mode and mode.mode:
@@ -295,9 +299,9 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    env = load_env()
     try:
-        if asyncio.iscoroutinefunction(args.func):
+        env = load_env()
+        if inspect.iscoroutinefunction(args.func):
             return asyncio.run(args.func(args, env))
         return args.func(args, env)
     except EpCubeError as exc:

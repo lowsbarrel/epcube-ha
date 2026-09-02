@@ -50,17 +50,14 @@ def _to_float(value: Any) -> Any:
             return float(number)
         except ValueError:
             return None
-    return value
+    # Anything else (a list, a dict) is unusable; None keeps the rest of the
+    # response parseable instead of failing validation over one field.
+    return None
 
 
 def _to_int(value: Any) -> Any:
     result = _to_float(value)
-    if result is None:
-        return None
-    try:
-        return int(result)
-    except (TypeError, ValueError):
-        return None
+    return None if result is None else int(result)
 
 
 def _to_bool(value: Any) -> Any:
@@ -76,7 +73,9 @@ def _to_bool(value: Any) -> Any:
             return True
         if lowered in {"0", "false", "no", "n", "off"}:
             return False
-    return value
+    # Unrecognised: None, not the raw value. Passing it through would fail
+    # validation and take the whole response down over one odd field.
+    return None
 
 
 _DATETIME_FORMATS = (
@@ -108,7 +107,7 @@ def _to_datetime(value: Any) -> Any:
                 return datetime.strptime(text, fmt)
             except ValueError:
                 continue
-    return value
+    return None
 
 
 def _to_str(value: Any) -> Any:
@@ -120,17 +119,21 @@ def _to_str(value: Any) -> Any:
         return "1" if value else "0"
     if isinstance(value, (int, float)):
         return str(int(value)) if float(value).is_integer() else str(value)
-    return value
+    return None
 
 
 def _to_str_list(value: Any) -> Any:
-    """`activeWeek` comes back as ints but has to be sent as strings."""
+    """`activeWeek` comes back as ints but has to be sent as strings.
+
+    Absent or unusable becomes an empty list, never None: the field is declared
+    as a list and a None would fail validation.
+    """
     value = _blank_to_none(value)
     if value is None:
-        return None
+        return []
     if isinstance(value, (list, tuple)):
-        return [_to_str(item) for item in value]
-    return value
+        return [_to_str(item) for item in value if _to_str(item) is not None]
+    return []
 
 
 # Annotated aliases used throughout the models.

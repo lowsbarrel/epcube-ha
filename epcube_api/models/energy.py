@@ -222,11 +222,10 @@ class SeriesPoint(EpCubeModel):
                 return base.replace(
                     month=int(label), day=1, hour=0, minute=0, second=0, microsecond=0
                 )
-            if scope is Scope.LIFETIME:
-                return datetime(int(label), 1, 1)
+            # Scope.LIFETIME, the only one left: a bare year.
+            return datetime(int(label), 1, 1)
         except (TypeError, ValueError):
             return None
-        return None
 
 
 class EnergySeries(EpCubeModel):
