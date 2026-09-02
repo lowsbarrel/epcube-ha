@@ -75,16 +75,21 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: home-assistant/actions/hassfest@a7c616ce81ccda50150bf1595786c71b1883fabb # master, 2026-08-03
 
-  # HACS validation: what a user installing from HACS needs to be present.
+  # HACS validation inspects the repository through the GitHub API - the default
+  # branch, its license, its topics - not the PR checkout. On a PR that adds the
+  # integration it therefore fails on files that exist only on the branch, so it
+  # runs on pushes to main instead. The `ci` gate counts a skipped job as passing,
+  # so this still blocks a broken main without blocking every PR.
   hacs:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: hacs/action@d556e736723344f83838d08488c983a15381059a # 22.5.0
         with:
           category: integration
-          # The repo is private, so the brand//image checks against the public
-          # HACS index cannot resolve it.
+          # The repo is private, so the brands/images check cannot resolve it
+          # against the public HACS index.
           ignore: brands
 
   # Single required check: the branch ruleset requires only `ci`, and this gate
