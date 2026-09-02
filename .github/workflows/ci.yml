@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Cancel superseded PR runs, but never a push to the default branch.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  # Conventional Commits, enforced (AGENTS.md "Naming"). PR titles matter because
+  # squash merges inherit them. Zero-dependency on purpose: an inline check keeps
+  # the supply chain closed. Titles go through env vars, never inline
+  # interpolation - PR titles are attacker-controlled input.
+  conventions:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+      - name: PR title follows Conventional Commits
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          pattern='^(feat|fix|docs|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9./-]+\))?!?: .+'
+          echo "$TITLE" | grep -qE "$pattern" \
+            || { echo "PR title must be Conventional Commits, e.g. 'feat(auth): add password reset'"; exit 1; }
+          [ "${#TITLE}" -le 72 ] || { echo "PR title over 72 characters"; exit 1; }
+      - name: Commit messages follow Conventional Commits
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          pattern='^(feat|fix|docs|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9./-]+\))?!?: .+'
+          bad=0
+          while IFS= read -r subject; do
+            case "$subject" in "Merge "*) continue ;; esac
+            echo "$subject" | grep -qE "$pattern" || { echo "not conventional: $subject"; bad=1; }
+            [ "${#subject}" -le 72 ] || { echo "over 72 characters: $subject"; bad=1; }
+          done < <(git log --format=%s "$BASE".."$HEAD")
+          exit "$bad"
+
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      # Fail if template placeholders were never replaced (skipped on the template
+      # repo itself, so the template's own CI stays green).
+      - name: No unreplaced template placeholders
+        if: ${{ !github.event.repository.is_template }}
+        run: sh scripts/check-placeholders.sh
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          enable-cache: true
+      # --frozen everywhere below: CI installs exactly what uv.lock pins, and
+      # fails rather than silently resolving something newer.
+      - name: Install dependencies
+        run: uv sync --frozen --all-extras
+      - name: Verify (secret scan + lint + types + test)
+        run: sh scripts/verify.sh
+
+  # Single required check: the branch ruleset requires only `ci`, and this gate
+  # depends on every blocking job. Add a new required job to `needs` here (one
+  # home) and it blocks merges automatically - no ruleset edit, no repo-setup.sh
+  # re-run. `always()` plus the explicit result check is load-bearing: a skipped
+  # required check can otherwise be reported to branch protection as passing.
+  ci:
+    if: ${{ always() }}
+    needs: [conventions, verify]
+    runs-on: ubuntu-latest
+    steps:
+      - name: All required jobs succeeded
+        run: |
+          for r in "${{ needs.conventions.result }}" "${{ needs.verify.result }}"; do
+            case "$r" in
+              success | skipped) ;;
+              *) echo "required job did not succeed: $r"; exit 1 ;;
+            esac
+          done
+          echo "all required jobs succeeded"

@@ -1,0 +1,47 @@
+{
+	"editor.formatOnSave": true,
+	"editor.insertSpaces": false,
+	"files.eol": "\n",
+	"files.insertFinalNewline": true,
+	"files.trimTrailingWhitespace": true,
+	"[markdown]": {
+		"files.trimTrailingWhitespace": false
+	},
+	"[yaml]": {
+		"editor.insertSpaces": true,
+		"editor.tabSize": 2
+	},
+	"[json]": {
+		"editor.insertSpaces": true,
+		"editor.tabSize": 2
+	},
+	"[python]": {
+		"editor.insertSpaces": true,
+		"editor.tabSize": 4,
+		"editor.defaultFormatter": "charliermarsh.ruff",
+		"editor.codeActionsOnSave": {
+			"source.fixAll.ruff": "explicit",
+			"source.organizeImports.ruff": "explicit"
+		}
+	},
+	// The uv-managed venv, so the editor resolves the same deps CI installs.
+	"python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
+	"python.testing.pytestEnabled": true,
+	"python.testing.unittestEnabled": false,
+	"python.testing.pytestArgs": ["tests"],
+	"files.associations": {
+		"*.jsonc": "jsonc"
+	},
+	"files.exclude": {
+		"**/.DS_Store": true,
+		"**/__pycache__": true,
+		"**/*.egg-info": true
+	},
+	"search.exclude": {
+		"**/.venv": true,
+		"**/.ruff_cache": true,
+		"**/.pytest_cache": true,
+		"**/.ty_cache": true,
+		"**/uv.lock": true
+	}
+}

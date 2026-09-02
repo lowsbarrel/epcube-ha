@@ -1,0 +1,66 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "verify",
+			"detail": "The 'done' bar: secret scan + ruff + ty + pytest (same as the pre-commit hook and CI)",
+			"type": "shell",
+			"command": "sh scripts/verify.sh",
+			"group": { "kind": "test", "isDefault": true },
+			"problemMatcher": []
+		},
+		{
+			"label": "test",
+			"type": "shell",
+			"command": "uv run pytest",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "lint (fix)",
+			"detail": "Apply ruff's automatic fixes, then format",
+			"type": "shell",
+			"command": "uv run ruff check --fix . && uv run ruff format .",
+			"problemMatcher": []
+		},
+		{
+			"label": "types",
+			"type": "shell",
+			"command": "uv run ty check",
+			"problemMatcher": []
+		},
+		{
+			"label": "sync deps",
+			"detail": "Install everything CI installs, including the login extra",
+			"type": "shell",
+			"command": "uv sync --all-extras",
+			"problemMatcher": []
+		},
+		{
+			"label": "epcube status",
+			"detail": "Live reading from the configured system",
+			"type": "shell",
+			"command": "uv run epcube status",
+			"problemMatcher": []
+		},
+		{
+			"label": "check-secrets",
+			"type": "shell",
+			"command": "sh scripts/check-secrets.sh",
+			"problemMatcher": []
+		},
+		{
+			"label": "check-placeholders",
+			"type": "shell",
+			"command": "sh scripts/check-placeholders.sh",
+			"problemMatcher": []
+		},
+		{
+			"label": "wire git hook",
+			"detail": "Point git at the tracked pre-commit hook",
+			"type": "shell",
+			"command": "git config core.hooksPath .githooks",
+			"problemMatcher": []
+		}
+	]
+}

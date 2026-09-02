@@ -1,0 +1,25 @@
+version: 2
+updates:
+  # Keeps the SHA-pinned actions in ci.yml up to date.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    # Conventional Commits, so Dependabot PRs pass the CI conventions gate.
+    commit-message:
+      prefix: chore
+      include: scope
+
+  # Python dependencies, resolved through uv.lock. The one-week cooldown lets a
+  # bad release get yanked before it reaches a PR.
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: chore
+      include: scope

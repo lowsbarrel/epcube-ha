@@ -1,0 +1,12 @@
+# Code ownership → GitHub auto-requests review from these owners on matching paths.
+# Replace @lowsbarrel with your GitHub username or team.
+#
+# Advisory by default: the `main` ruleset ships with require_code_owner_review=false
+# (.github/rulesets/main.json), so this only auto-assigns reviewers until you flip
+# that flag to enforce owner approval on merge.
+
+*                          @lowsbarrel
+
+# Tighten sensitive areas with their own owners as the team grows, e.g.:
+# /.github/                 @lowsbarrel
+# /scripts/                 @lowsbarrel

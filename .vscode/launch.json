@@ -1,0 +1,32 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "epcube CLI",
+			"detail": "Debug a CLI command; edit args to pick one",
+			"type": "debugpy",
+			"request": "launch",
+			"module": "epcube_api.cli",
+			"args": ["status"],
+			"console": "integratedTerminal",
+			"justMyCode": false
+		},
+		{
+			"name": "Current file",
+			"type": "debugpy",
+			"request": "launch",
+			"program": "${file}",
+			"console": "integratedTerminal",
+			"justMyCode": false
+		},
+		{
+			"name": "pytest (current file)",
+			"type": "debugpy",
+			"request": "launch",
+			"module": "pytest",
+			"args": ["${file}", "-vv"],
+			"console": "integratedTerminal",
+			"justMyCode": false
+		}
+	]
+}

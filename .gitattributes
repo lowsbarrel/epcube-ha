@@ -1,0 +1,26 @@
+# Normalize line endings: LF in the repo, auto on checkout.
+* text=auto eol=lf
+
+# Scripts must stay LF regardless of platform.
+*.sh    text eol=lf
+
+# Generated - collapse in diffs and exclude from language stats.
+# Add your project's generated/lockfiles here, e.g.:
+#   pnpm-lock.yaml   -diff linguist-generated
+#   package-lock.json -diff linguist-generated
+#   go.sum           -diff linguist-generated
+#   Cargo.lock       -diff linguist-generated
+
+# Binary assets.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.webp  binary
+*.woff  binary
+*.woff2 binary
+*.pdf   binary
+
+# Generated - collapse in diffs and exclude from language stats.
+uv.lock -diff linguist-generated

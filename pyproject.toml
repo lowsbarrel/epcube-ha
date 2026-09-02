@@ -1,0 +1,82 @@
+[project]
+name = "epcube-api"
+version = "0.1.0"
+description = "Home Assistant integration and Python client for EP Cube home battery systems"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "lowsbarrel" }]
+dependencies = ["httpx>=0.27", "pydantic>=2.7"]
+
+[project.optional-dependencies]
+# Only the login flow needs these: the sign-in endpoint is guarded by a
+# slide-puzzle CAPTCHA that has to be solved locally. Skip if you have a token.
+login = [
+    "opencv-python-headless",
+    "numpy",
+    "pillow",
+    "pycryptodome",
+]
+
+[project.scripts]
+epcube = "epcube_api.cli:main"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14",
+    "ty>=0.0.1a14",
+    "pytest>=8",
+    "pytest-asyncio>=0.24",
+    "respx>=0.21",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["epcube_api"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+# The Home Assistant integration is loaded by HA, not imported by this package;
+# it follows HA's own conventions, so it gets a lighter rule set below.
+extend-exclude = [".venv", "tools/vendor"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # import sorting
+    "UP",   # pyupgrade
+    "B",    # bugbear
+    "SIM",  # simplify
+    "C4",   # comprehensions
+    "RUF",  # ruff-specific
+    "ASYNC",
+]
+ignore = [
+    # The API returns naive local timestamps with the zone named in a separate
+    # field; attaching a zone here would be inventing information.
+    "DTZ",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.ty.environment]
+python-version = "3.11"
+root = ["."]
+
+[tool.ty.src]
+exclude = [".venv", "custom_components"]

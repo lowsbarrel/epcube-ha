@@ -1,0 +1,8 @@
+#!/bin/sh
+# Enforced pre-commit gate - the same bar as "done" (AGENTS.md). Activated once
+# `git config core.hooksPath .githooks` has run (.github/repo-setup.sh does this
+# for you), for any tool or human, not just AI agents. CI enforces the same bar
+# on every PR regardless. For a genuine work-in-progress commit, bypass with:
+#   git commit --no-verify
+set -e
+sh scripts/verify.sh

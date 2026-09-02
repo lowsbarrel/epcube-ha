@@ -1,0 +1,20 @@
+{
+	"recommendations": [
+		// Consistent whitespace/charset from .editorconfig
+		"editorconfig.editorconfig",
+		// Validates .github/workflows/*.yml, dependabot.yml, and other YAML
+		"redhat.vscode-yaml",
+		// Highlights outstanding TODO/FIXME
+		"gruntfuggly.todo-tree",
+		// Claude Code
+		"anthropic.claude-code",
+		// Python language support
+		"ms-python.python",
+		// Lint + format, the same ruff the verification bar runs
+		"charliermarsh.ruff",
+		// ty, the type checker the verification bar runs
+		"astral-sh.ty",
+		// Recognises pyproject.toml / uv.lock
+		"tamasfe.even-better-toml"
+	]
+}
