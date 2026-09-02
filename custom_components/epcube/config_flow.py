@@ -56,7 +56,9 @@ _LOGGER = logging.getLogger(__name__)
 
 REGION_SELECTOR = SelectSelector(
     SelectSelectorConfig(
-        options=[region.value for region in Region],
+        # Lowercase because hassfest requires translation keys to match
+        # [a-z0-9-_]+; Region.parse() accepts either case.
+        options=[region.value.lower() for region in Region],
         mode=SelectSelectorMode.DROPDOWN,
         translation_key="region",
     )
@@ -64,14 +66,14 @@ REGION_SELECTOR = SelectSelector(
 
 STEP_TOKEN_SCHEMA = vol.Schema(
     {
-        vol.Required(CONF_REGION, default=Region.EU.value): REGION_SELECTOR,
+        vol.Required(CONF_REGION, default=Region.EU.value.lower()): REGION_SELECTOR,
         vol.Required(CONF_TOKEN): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD)),
     }
 )
 
 STEP_CREDENTIALS_SCHEMA = vol.Schema(
     {
-        vol.Required(CONF_REGION, default=Region.EU.value): REGION_SELECTOR,
+        vol.Required(CONF_REGION, default=Region.EU.value.lower()): REGION_SELECTOR,
         vol.Required("email"): TextSelector(TextSelectorConfig(type=TextSelectorType.EMAIL)),
         vol.Required("password"): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD)),
     }
@@ -95,7 +97,7 @@ class EpCubeConfigFlow(ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
     def __init__(self) -> None:
-        self._region: str = Region.EU.value
+        self._region: str = Region.EU.value.lower()
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Choose how to authenticate."""
@@ -171,7 +173,7 @@ class EpCubeConfigFlow(ConfigFlow, domain=DOMAIN):
                     )
                 }
             ),
-            description_placeholders={"region": entry.data[CONF_REGION]},
+            description_placeholders={"region": Region.parse(entry.data[CONF_REGION]).value},
             errors=errors,
         )
 

@@ -137,9 +137,9 @@
   "selector": {
     "region": {
       "options": {
-        "EU": "Europe",
-        "US": "United States",
-        "JP": "Japan"
+        "eu": "Europe",
+        "us": "United States",
+        "jp": "Japan"
       }
     }
   }
