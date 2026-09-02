@@ -1,41 +1,90 @@
 # Setup
 
-Two audiences: someone turning the **template** into a project, and someone
-setting up **local dev** on an existing clone.
+## Installing the integration
 
-## From template to project
+### HACS
 
-The fast path is the `/setup` skill in Claude Code - it interviews you, replaces
-every placeholder, wires the hook, and sets up the GitHub repo policy. To do it
-by hand:
+The repository ships releases only — HACS never offers the default branch
+(`hide_default_branch` in `hacs.json`), so you always get a tagged, verified
+build.
 
-1. **Replace placeholders.** Grep for `{{` and substitute every double-brace
-   token: `PROJECT_NAME`, `PROJECT_SLUG`, `DESCRIPTION`, `OWNER`. Confirm with
-   `sh scripts/check-placeholders.sh`.
-2. **Fill in [`../AGENTS.md`](../AGENTS.md)** - the "one home" tables and the
-   Project invariants. This is the contract; don't skip it.
-3. **Wire your stack.** Wire your linter and test runner into
-   [`../scripts/verify.sh`](../scripts/verify.sh), enable the matching
-   `dependabot.yml` ecosystem, and add a toolchain setup step to
-   `.github/workflows/ci.yml` before it runs `scripts/verify.sh`.
-4. **Wire the hook:** `git config core.hooksPath .githooks`.
-5. **Set repo policy:** create the GitHub repo, then run
-   `sh .github/repo-setup.sh` once as an admin (squash-only merges + the `main`
-   ruleset that requires the `ci` check; it also wires the hook).
-6. Delete the template callout at the top of `README.md`.
+1. HACS → ⋮ → **Custom repositories** → add `lowsbarrel/epcube-ha`, category
+   **Integration**. (Or use the button in the [README](../README.md).)
+2. Install, then restart Home Assistant.
+3. **Settings → Devices & Services → Add Integration → EP Cube**.
 
-## Local dev
+The release bundle carries the API client inside it, so the only thing Home
+Assistant installs from PyPI is `pydantic`.
+
+### Manually
+
+Download `epcube.zip` from a
+[release](https://github.com/lowsbarrel/epcube-ha/releases) and unpack it into
+`config/custom_components/`, so you end up with `config/custom_components/epcube/`.
+Restart.
+
+Copying the repository folder directly will *not* work: `custom_components/epcube/`
+in the source tree imports `epcube_api`, which the release bundles but the source
+tree keeps separate. Either use a release, or `pip install -e .` into Home
+Assistant's environment.
+
+## Configuring it
+
+You need two things: the **region** and a **token**.
+
+**Region is not cosmetic.** An account exists on exactly one cluster — EU, US or
+JP. A token minted against the wrong one is rejected as *"User token expired"*,
+identical to a genuinely expired token. If setup fails with an auth error and you
+are sure of the credentials, try another region before anything else.
+
+**Token.** The config flow offers two paths:
+
+- *Sign in with email and password* — available only when the CAPTCHA solver's
+  dependencies are importable. The login endpoint is guarded by a slide puzzle,
+  which is solved locally and occasionally needs a second attempt.
+- *Paste an access token* — always available. Mint one with the CLI below, or
+  from any tool that produces an EP Cube Bearer token.
+
+Tokens expire. When one does, the integration raises a reauth flow and Home
+Assistant prompts for a replacement; nothing else needs reconfiguring.
+
+### Options
+
+| Option | Default | What it costs |
+| --- | --- | --- |
+| Update interval | 30 s | one live read plus the enabled extras |
+| Read the five-minute history | on | one extra request; the only source of a *measured* battery power reading |
+| Read monthly/yearly/lifetime totals | off | four extra requests per update, for counters that barely move |
+
+## Development
 
 ```sh
-git config core.hooksPath .githooks   # wire the pre-commit hook (once per clone)
-cp .env.example .env                   # fill in local config - never commit .env
-sh scripts/verify.sh                   # the 'done' bar: secret scan + lint + tests
+uv sync --all-extras     # client, CAPTCHA solver, Home Assistant, tooling
+cp .env.example .env     # fill in region + credentials
+uv run epcube login --save
+uv run epcube status
 ```
 
-Add project-specific steps (install dependencies, start services, seed data) here
-as you wire your stack.
+Then wire the commit gate once:
 
-## Requirements
+```sh
+git config core.hooksPath .githooks
+```
 
-List the tools a contributor needs (language runtime and version, package
-manager, any services). Keep the versions in sync with what CI uses.
+`sh scripts/verify.sh` is the whole bar — secret scan, ruff, ty, pytest. The hook
+and CI run exactly that script, so a green local run predicts a green PR. See
+[testing.md](testing.md).
+
+Home Assistant is a dev dependency purely so `ty` can check the integration
+against real HA types. It is not needed to use the client.
+
+## Credentials
+
+`.env` is gitignored; `.env.example` lists every variable the code reads. Nothing
+reads credentials from anywhere else, and `scripts/check-secrets.sh` blocks the
+obvious slips in the hook and in CI.
+
+Be aware that the API returns the owner's name, postal address, GPS coordinates
+and email on several endpoints. `epcube status --json` and a raw `probe` will
+show all of it — the integration's diagnostics download redacts it, but a
+hand-made dump does not.

@@ -1,0 +1,146 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "EP Cube",
+        "description": "Choose how to sign in.",
+        "menu_options": {
+          "token": "Paste an access token",
+          "credentials": "Sign in with email and password"
+        }
+      },
+      "token": {
+        "title": "Access token",
+        "description": "Paste a Bearer token for your EP Cube account. Pick the region your account belongs to — an account exists on exactly one, and a token from the wrong one fails as though it had expired.",
+        "data": {
+          "region": "Region",
+          "token": "Access token"
+        }
+      },
+      "credentials": {
+        "title": "Sign in",
+        "description": "The same email and password you use in the EP Cube app. Signing in solves a puzzle CAPTCHA, which occasionally needs a second attempt.",
+        "data": {
+          "region": "Region",
+          "email": "Email",
+          "password": "Password"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Access token expired",
+        "description": "The token for your {region} account is no longer accepted. Paste a new one.",
+        "data": {
+          "token": "Access token"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Token rejected. It may have expired, or it may belong to a different region — check the region before replacing it.",
+      "cannot_connect": "Could not reach the EP Cube service.",
+      "captcha_failed": "Could not complete sign-in. The puzzle CAPTCHA fails intermittently; try again.",
+      "no_device": "That account has no system attached to it."
+    },
+    "abort": {
+      "already_configured": "This system is already set up.",
+      "reauth_successful": "Reconnected."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "EP Cube options",
+        "data": {
+          "scan_interval": "Update interval",
+          "enable_series": "Read the five-minute history",
+          "enable_statistics": "Read monthly, yearly and lifetime totals"
+        },
+        "data_description": {
+          "enable_series": "The only source of a measured battery power reading. Without it, battery power is inferred from the other flows and carries some noise.",
+          "enable_statistics": "Four extra requests per update. These totals change slowly, so leaving this off costs little."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "token_expired": {
+      "message": "The EP Cube access token is no longer valid."
+    },
+    "config_unavailable": {
+      "message": "The current device configuration could not be read, so it cannot be changed safely."
+    },
+    "no_tou_schedule": {
+      "message": "No time-of-use periods are configured. Switching to that mode now would leave the battery on an empty tariff calendar."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "solar_power": { "name": "Solar power" },
+      "grid_power": { "name": "Grid power" },
+      "load_power": { "name": "House load" },
+      "backup_power": { "name": "Backup load" },
+      "non_backup_power": { "name": "Non-backup load" },
+      "battery_power": { "name": "Battery power" },
+      "battery_soc": { "name": "Battery" },
+      "battery_energy": { "name": "Battery energy" },
+      "solar_today": { "name": "Solar today" },
+      "backup_today": { "name": "Backup load today" },
+      "grid_import_today": { "name": "Grid import today" },
+      "grid_export_today": { "name": "Grid export today" },
+      "battery_charged_today": { "name": "Battery charged today" },
+      "battery_discharged_today": { "name": "Battery discharged today" },
+      "solar_lifetime": { "name": "Solar total" },
+      "grid_import_lifetime": { "name": "Grid import total" },
+      "grid_export_lifetime": { "name": "Grid export total" },
+      "self_sufficiency": { "name": "Self-sufficiency" },
+      "operating_mode": {
+        "name": "Operating mode",
+        "state": {
+          "self_consumption": "Self-consumption",
+          "time_of_use": "Time of use",
+          "backup": "Backup",
+          "unknown": "Unknown"
+        }
+      },
+      "signal_level": { "name": "Signal level" },
+      "outage_count": { "name": "Grid outages" },
+      "last_outage": { "name": "Last grid outage" },
+      "last_connected": { "name": "Last connected" },
+      "wifi_ssid": { "name": "Wi-Fi network" },
+      "pv_string_power": { "name": "PV string {index} power" },
+      "pv_string_voltage": { "name": "PV string {index} voltage" },
+      "pv_string_current": { "name": "PV string {index} current" }
+    },
+    "binary_sensor": {
+      "online": { "name": "Online" },
+      "fault": { "name": "Fault" },
+      "alert": { "name": "Alert" },
+      "grid_outage": { "name": "Grid outage" }
+    },
+    "select": {
+      "operating_mode": {
+        "name": "Operating mode",
+        "state": {
+          "self_consumption": "Self-consumption",
+          "time_of_use": "Time of use",
+          "backup": "Backup"
+        }
+      }
+    },
+    "number": {
+      "self_consumption_reserve": { "name": "Self-consumption reserve" },
+      "backup_reserve": { "name": "Backup reserve" }
+    },
+    "switch": {
+      "grid_charging": { "name": "Charge from grid" }
+    }
+  },
+  "selector": {
+    "region": {
+      "options": {
+        "eu": "Europe",
+        "us": "United States",
+        "jp": "Japan"
+      }
+    }
+  }
+}

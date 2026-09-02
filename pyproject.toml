@@ -3,7 +3,7 @@ name = "epcube-api"
 version = "0.1.0"
 description = "Home Assistant integration and Python client for EP Cube home battery systems"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 license = { text = "MIT" }
 authors = [{ name = "lowsbarrel" }]
 dependencies = ["httpx>=0.27", "pydantic>=2.7"]
@@ -28,6 +28,7 @@ dev = [
     "pytest>=8",
     "pytest-asyncio>=0.24",
     "respx>=0.21",
+    "homeassistant",
 ]
 
 [build-system]
@@ -44,7 +45,7 @@ addopts = "-q"
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py313"
 # The Home Assistant integration is loaded by HA, not imported by this package;
 # it follows HA's own conventions, so it gets a lighter rule set below.
 extend-exclude = [".venv", "tools/vendor"]
@@ -75,8 +76,8 @@ ignore = [
 docstring-code-format = true
 
 [tool.ty.environment]
-python-version = "3.11"
+python-version = "3.13"
 root = ["."]
 
 [tool.ty.src]
-exclude = [".venv", "custom_components"]
+exclude = [".venv"]
