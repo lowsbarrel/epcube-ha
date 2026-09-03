@@ -12,15 +12,16 @@ set -e
 
 OUT=${1:-epcube.zip}
 
-# CI has python3; a developer machine may only have the uv-managed one. Windows
+# The import check below needs the client's own dependencies, so the uv
+# environment comes first: a system python3 has pydantic only by luck. Windows
 # ships a python3 stub that resolves but refuses to run, so test execution, not
 # just presence.
-if python3 -c '' >/dev/null 2>&1; then
+if command -v uv >/dev/null 2>&1; then
+	PY="uv run --locked python"
+elif python3 -c '' >/dev/null 2>&1; then
 	PY="python3"
-elif command -v uv >/dev/null 2>&1; then
-	PY="uv run --frozen python"
 else
-	echo "need a working python3, or uv" >&2
+	echo "need uv, or a working python3" >&2
 	exit 1
 fi
 STAGE=$(mktemp -d)
@@ -66,12 +67,20 @@ with open(path, "w", encoding="utf-8") as fh:
 print(f"requirements -> {manifest['requirements']}")
 PY
 
-# Prove the bundle imports as Home Assistant will load it, before shipping it.
+# Prove the client resolves under its vendored name, the way Home Assistant will
+# import it. The parent package is a stand-in rather than the real integration:
+# running that one imports homeassistant, which is not a build dependency, and
+# a stand-in also keeps the un-vendored epcube_api in the repo root from
+# standing in for a rewrite that did not happen.
 $PY - "$STAGE" <<'PY'
 import importlib
 import sys
+import types
 
-sys.path.insert(0, sys.argv[1])
+parent = types.ModuleType("epcube")
+parent.__path__ = [f"{sys.argv[1]}/epcube"]
+sys.modules["epcube"] = parent
+
 module = importlib.import_module("epcube.epcube_api")
 print(f"vendored client imports: epcube_api {module.__version__}")
 PY
