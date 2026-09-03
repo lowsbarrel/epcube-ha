@@ -64,8 +64,13 @@ self-contained: the only thing Home Assistant installs is `pydantic`, since http
 already ships with it.
 
 The script verifies its own output before zipping. It fails if any absolute
-`epcube_api` import survived the rewrite, and it imports the vendored package the
-way Home Assistant will load it. Run it locally any time:
+`epcube_api` import survived the rewrite, and it imports the vendored client
+under the name Home Assistant will use. That import runs under `uv`, so the
+client's dependencies are there, and it substitutes a placeholder for the
+integration package instead of executing the real one, which would drag Home
+Assistant itself into the build. CI runs the same script on every pull request,
+so a bundle that cannot be built is caught long before a tag exists. Run it
+locally any time:
 
 ```sh
 sh scripts/build-release.sh

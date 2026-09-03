@@ -67,6 +67,12 @@ jobs:
       - name: Verify (secret scan + lint + types + test)
         run: sh scripts/verify.sh
 
+      # The release path, walked on every change. Nothing else exercises the
+      # vendoring rewrite, so without this a broken bundle stays invisible until
+      # a tag is pushed and the release fails with the version already public.
+      - name: Build the HACS bundle
+        run: sh scripts/build-release.sh epcube.zip
+
   # Home Assistant's own manifest/quality checks. Catches a malformed manifest,
   # a missing translation key, or a version that does not parse - none of which
   # the Python toolchain would notice.
