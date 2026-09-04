@@ -17,6 +17,7 @@ import asyncio
 import inspect
 import json
 import os
+import sys
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
@@ -297,7 +298,16 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def utf8_stdout() -> None:
+    """A redirected stdout on Windows defaults to the ANSI code page, which
+    cannot encode the report's → and █ and crashes the command mid-print."""
+    reconfigure = getattr(sys.stdout, "reconfigure", None)
+    if reconfigure is not None:
+        reconfigure(encoding="utf-8")
+
+
 def main(argv: list[str] | None = None) -> int:
+    utf8_stdout()
     args = build_parser().parse_args(argv)
     try:
         env = load_env()
