@@ -7,7 +7,9 @@ injects a MockTransport client, so nothing can reach the network.
 
 from __future__ import annotations
 
+import io
 import json
+import sys
 from pathlib import Path
 
 import httpx
@@ -289,6 +291,22 @@ def test_an_interrupt_becomes_exit_130(monkeypatch):
 
     monkeypatch.setattr(cli, "load_env", boom)
     assert cli.main(["routes"]) == 130
+
+
+def test_output_is_utf8_even_on_a_windows_pipe(monkeypatch):
+    """A redirected stdout on Windows is cp1252, which cannot encode the ·, →
+    and █ the reports use; main() switches it to UTF-8 before printing."""
+    pipe = io.TextIOWrapper(io.BytesIO(), encoding="cp1252")
+    monkeypatch.setattr(sys, "stdout", pipe)
+    assert cli.main(["routes"]) == 0
+    pipe.flush()
+    assert pipe.encoding == "utf-8"
+    assert "·" in pipe.buffer.getvalue().decode("utf-8")
+
+
+def test_a_stream_without_reconfigure_is_left_alone(monkeypatch):
+    monkeypatch.setattr(sys, "stdout", io.StringIO())
+    assert cli.main(["routes"]) == 0
 
 
 def test_no_command_is_a_usage_error():
