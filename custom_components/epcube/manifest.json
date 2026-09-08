@@ -1,6 +1,7 @@
 {
   "domain": "epcube",
   "name": "EP Cube",
+  "after_dependencies": ["recorder"],
   "codeowners": ["@lowsbarrel"],
   "config_flow": true,
   "documentation": "https://github.com/lowsbarrel/epcube-ha",
