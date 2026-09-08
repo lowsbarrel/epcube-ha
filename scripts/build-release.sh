@@ -90,8 +90,11 @@ find "$STAGE" -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null || true
 find "$STAGE" -name '*.pyc' -delete 2>/dev/null || true
 
 # zipfile rather than zip(1): the latter is absent on a stock Windows dev box.
+# Zip from the integration folder, not its parent: HACS (zip_release) extracts
+# the archive verbatim into custom_components/epcube/, so a wrapping folder would
+# nest the manifest one level too deep and Home Assistant would never find it.
 rm -f "$OUT"
-$PY - "$STAGE" "$OUT" <<'ZIPPY'
+$PY - "$STAGE/epcube" "$OUT" <<'ZIPPY'
 import sys
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
@@ -102,6 +105,10 @@ with ZipFile(out, "w", ZIP_DEFLATED) as archive:
     for path in sorted(stage.rglob("*")):
         if path.is_file():
             archive.write(path, path.relative_to(stage).as_posix())
-count = len(ZipFile(out).namelist())
-print(f"OK {out} ({out.stat().st_size / 1024:.0f} KiB, {count} files)")
+names = ZipFile(out).namelist()
+# The manifest must sit at the zip root, or HACS drops a broken layout into HA.
+if "manifest.json" not in names:
+    print("FAIL: manifest.json is not at the zip root", file=sys.stderr)
+    sys.exit(1)
+print(f"OK {out} ({out.stat().st_size / 1024:.0f} KiB, {len(names)} files)")
 ZIPPY
