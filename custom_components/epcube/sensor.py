@@ -13,6 +13,7 @@ from datetime import UTC, datetime
 from typing import ClassVar
 
 from homeassistant.components.sensor import (
+    RestoreSensor,
     SensorDeviceClass,
     SensorEntity,
     SensorEntityDescription,
@@ -233,6 +234,10 @@ async def async_setup_entry(
         EpCubeSensor(coordinator, description) for description in SENSORS
     ]
     entities.append(EpCubeOverrideSensor(coordinator))
+    entities.append(EpCubeBatteryEnergySensor(coordinator, "battery_charged_energy", "charged"))
+    entities.append(
+        EpCubeBatteryEnergySensor(coordinator, "battery_discharged_energy", "discharged")
+    )
 
     # PV strings: the API does not declare how many inputs exist, so create one
     # set of entities per string actually reported at setup.
@@ -359,3 +364,40 @@ class EpCubeOverrideSensor(EpCubeEntity, SensorEntity):
             "target_soc": str(override.target_soc),
             "ends_at": override.ends_at.isoformat() if override.ends_at else "manual",
         }
+
+
+class EpCubeBatteryEnergySensor(EpCubeEntity, RestoreSensor):
+    """Charged or discharged battery energy, derived from the stored-energy level.
+
+    The API's own battery energy counters read zero, so this integrates the
+    stored-energy reading instead (see `BatteryEnergyAccumulator`). Cumulative and
+    restored across restarts, so it can feed the Energy dashboard's battery in/out.
+    """
+
+    _attr_device_class = SensorDeviceClass.ENERGY
+    _attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+    _attr_suggested_display_precision = 2
+
+    def __init__(self, coordinator: EpCubeCoordinator, key: str, direction: str) -> None:
+        super().__init__(coordinator, key)
+        self._attr_translation_key = key
+        self._direction = direction
+        # The total carried over from before this session; the accumulator only
+        # counts movement since the process started.
+        self._restored = 0.0
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        last = await self.async_get_last_sensor_data()
+        value = last.native_value if last is not None else None
+        if isinstance(value, (int, float, str)):
+            try:
+                self._restored = float(value)
+            except (TypeError, ValueError):
+                self._restored = 0.0
+
+    @property
+    def native_value(self) -> float:
+        session = getattr(self.coordinator.battery_energy, self._direction)
+        return round(self._restored + session, 2)

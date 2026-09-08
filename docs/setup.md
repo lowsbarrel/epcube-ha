@@ -69,9 +69,15 @@ the history loop.
 
 To use them, open **Settings → Dashboards → Energy** and set the *Solar
 production*, *Grid consumption* and *Return to grid* sources to those imported
-statistics. The API only resolves **daily** granularity for past days, and does
-not report **battery** in/out energy at all (it returns zero at every scope), so
-battery flow cannot be charted.
+statistics. The API only resolves **daily** granularity for past days, so past
+days appear as single daily bars.
+
+The API does not report battery in/out *energy* - those counters read zero at
+every scope - so the **Battery charged** and **Battery discharged** sensors
+derive it by tracking the stored-energy level each refresh (see `battery.py`).
+Point the dashboard's battery in/out at those. This is forward-only (there is no
+battery-energy history to backfill) and a best-effort figure whose accuracy
+improves with a shorter update interval.
 
 ## Development
 
