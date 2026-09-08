@@ -55,29 +55,38 @@ Assistant prompts for a replacement; nothing else needs reconfiguring.
 | Update interval | 60 s | the live tier — live, mode, PV (3 reads) — every cycle; keeps power/SoC responsive |
 | History interval | 30 min | the slow reads — device details, outages, totals, five-minute series — on their own loop |
 | Read the five-minute history | on | one request per history interval; the only source of a *measured* battery power reading |
-| Read monthly/yearly/lifetime totals | off | four requests per history interval, for counters that barely move |
-| Import past energy into the Energy dashboard | on | one request per history interval; backfills the device's own daily history |
+| Read monthly/yearly/lifetime totals | off | four requests per history interval, for counters that barely move; turn on to feed the Energy dashboard from the lifetime sensors |
 
-### Energy dashboard history
+### Energy dashboard
 
-HA's Energy dashboard is drawn from statistics it recorded live, so the days
-before you installed the integration start out blank. With **Import past energy**
-on, the integration backfills the device's own daily history as external
-statistics named **`EP Cube solar (imported)`**, **`EP Cube grid import
-(imported)`** and **`EP Cube grid export (imported)`**, and keeps them current on
-the history loop.
+The integration exposes ordinary `total_increasing` energy sensors, so the Energy
+dashboard reads them the standard way - and, unlike an external statistic, they
+accept a **fixed price** in the dashboard, so cost tracking works with no extra
+setup. Open **Settings → Dashboards → Energy** and set the sources to:
 
-To use them, open **Settings → Dashboards → Energy** and set the *Solar
-production*, *Grid consumption* and *Return to grid* sources to those imported
-statistics. The API only resolves **daily** granularity for past days, so past
-days appear as single daily bars.
+| Dashboard source | Sensor | Notes |
+| --- | --- | --- |
+| Solar production | **Solar today** | from the live read, always available |
+| Grid consumption | **Grid import today** | from the live read |
+| Return to grid | **Grid export today** | from the live read |
+| Battery in | **Battery charged** | derived, forward-only (see below) |
+| Battery out | **Battery discharged** | derived, forward-only (see below) |
+
+Prefer the monotonic lifetime counters (**Solar total**, **Grid import total**,
+**Grid export total**) instead? Turn on **Read monthly/yearly/lifetime totals**
+so they hold a value, then point the sources at them.
+
+**No pre-install history.** HA builds statistics from what it records live, so
+days before you installed the integration stay blank; there is no backfill. The
+EP Cube API resolves past days only at daily granularity, so a backfill would be
+flat daily bars anyway - not worth the external-statistics machinery and the
+fixed-price restriction it drags in.
 
 The API does not report battery in/out *energy* - those counters read zero at
 every scope - so the **Battery charged** and **Battery discharged** sensors
 derive it by tracking the stored-energy level each refresh (see `battery.py`).
-Point the dashboard's battery in/out at those. This is forward-only (there is no
-battery-energy history to backfill) and a best-effort figure whose accuracy
-improves with a shorter update interval.
+This is a best-effort figure whose accuracy improves with a shorter update
+interval.
 
 ## Development
 
