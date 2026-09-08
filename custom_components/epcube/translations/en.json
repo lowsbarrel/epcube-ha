@@ -51,12 +51,15 @@
         "title": "EP Cube options",
         "data": {
           "scan_interval": "Update interval",
+          "statistics_interval": "History interval",
           "enable_series": "Read the five-minute history",
           "enable_statistics": "Read monthly, yearly and lifetime totals"
         },
         "data_description": {
+          "scan_interval": "How often the live values - power, state of charge, mode - are read.",
+          "statistics_interval": "How often the slow-changing history is read: the totals and the five-minute series. They barely move, so a long interval cuts request volume while the live values stay responsive.",
           "enable_series": "The only source of a measured battery power reading. Without it, battery power is inferred from the other flows and carries some noise.",
-          "enable_statistics": "Four extra requests per update. These totals change slowly, so leaving this off costs little."
+          "enable_statistics": "Four extra requests per history interval. These totals change slowly, so leaving this off costs little."
         }
       }
     }

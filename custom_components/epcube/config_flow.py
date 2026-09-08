@@ -42,13 +42,17 @@ from .const import (
     CONF_REGION,
     CONF_SCAN_INTERVAL,
     CONF_SN,
+    CONF_STATISTICS_INTERVAL,
     CONF_TOKEN,
     DEFAULT_ENABLE_SERIES,
     DEFAULT_ENABLE_STATISTICS,
     DEFAULT_SCAN_INTERVAL,
+    DEFAULT_STATISTICS_INTERVAL,
     DOMAIN,
     MAX_SCAN_INTERVAL,
+    MAX_STATISTICS_INTERVAL,
     MIN_SCAN_INTERVAL,
+    MIN_STATISTICS_INTERVAL,
 )
 from .coordinator import EpCubeConfigEntry
 
@@ -242,6 +246,18 @@ class EpCubeOptionsFlow(OptionsFlow):
                             min=MIN_SCAN_INTERVAL,
                             max=MAX_SCAN_INTERVAL,
                             step=5,
+                            unit_of_measurement="s",
+                            mode=NumberSelectorMode.BOX,
+                        )
+                    ),
+                    vol.Required(
+                        CONF_STATISTICS_INTERVAL,
+                        default=options.get(CONF_STATISTICS_INTERVAL, DEFAULT_STATISTICS_INTERVAL),
+                    ): NumberSelector(
+                        NumberSelectorConfig(
+                            min=MIN_STATISTICS_INTERVAL,
+                            max=MAX_STATISTICS_INTERVAL,
+                            step=60,
                             unit_of_measurement="s",
                             mode=NumberSelectorMode.BOX,
                         )
