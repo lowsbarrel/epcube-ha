@@ -34,7 +34,6 @@ from .battery import BatteryEnergyAccumulator
 from .const import (
     CONF_ENABLE_SERIES,
     CONF_ENABLE_STATISTICS,
-    CONF_IMPORT_HISTORY,
     CONF_REGION,
     CONF_SCAN_INTERVAL,
     CONF_SN,
@@ -42,13 +41,11 @@ from .const import (
     CONF_TOKEN,
     DEFAULT_ENABLE_SERIES,
     DEFAULT_ENABLE_STATISTICS,
-    DEFAULT_IMPORT_HISTORY,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_STATISTICS_INTERVAL,
     DOMAIN,
 )
 from .override import OverrideManager
-from .statistics import StatisticsImporter
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -76,7 +73,6 @@ class EpCubeCoordinator(DataUpdateCoordinator[Snapshot]):
         self.statistics_interval: float = options.get(
             CONF_STATISTICS_INTERVAL, DEFAULT_STATISTICS_INTERVAL
         )
-        self.import_history: bool = options.get(CONF_IMPORT_HISTORY, DEFAULT_IMPORT_HISTORY)
         # The fast loop reads the live tier; the heavy reads run at most once per
         # statistics_interval. None until the first run, which always fetches.
         self._last_heavy: float | None = None
@@ -101,15 +97,14 @@ class EpCubeCoordinator(DataUpdateCoordinator[Snapshot]):
         )
 
         self.overrides = OverrideManager(hass, self)
-        self.statistics = StatisticsImporter(self)
         # The API's battery energy counters read zero, so derive them by tracking
         # the stored-energy level, which the live read carries every fast cycle.
         self.battery_energy = BatteryEnergyAccumulator()
 
     async def _async_update_data(self) -> Snapshot:
-        # The heavy reads (device config, outages and history) are due on the
-        # first refresh and then once per statistics_interval; every other cycle
-        # reads only the live tier - live, mode and PV.
+        # The heavy reads (device config, outages, totals and the series) are due
+        # on the first refresh and then once per statistics_interval; every other
+        # cycle reads only the live tier - live, mode and PV.
         heavy_due = (
             self._last_heavy is None or monotonic() - self._last_heavy >= self.statistics_interval
         )
@@ -134,12 +129,6 @@ class EpCubeCoordinator(DataUpdateCoordinator[Snapshot]):
             self._last_heavy = monotonic()
         self._carry_slow_sections(snapshot, heavy_due)
         self.battery_energy.update(snapshot.live.battery_current_electricity)
-
-        if heavy_due and self.import_history:
-            try:
-                await self.statistics.async_refresh(snapshot.dev_id)
-            except Exception as err:  # a stats import must never fail the poll
-                _LOGGER.warning("energy history import failed: %s", err)
 
         # A degraded section is not a failed refresh: the live data is present
         # and the affected entities simply hold their previous value.

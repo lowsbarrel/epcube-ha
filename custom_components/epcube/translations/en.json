@@ -53,15 +53,13 @@
           "scan_interval": "Update interval",
           "statistics_interval": "History interval",
           "enable_series": "Read the five-minute history",
-          "enable_statistics": "Read monthly, yearly and lifetime totals",
-          "import_history": "Import past energy into the Energy dashboard"
+          "enable_statistics": "Read monthly, yearly and lifetime totals"
         },
         "data_description": {
           "scan_interval": "How often the live values - power, state of charge, mode - are read.",
           "statistics_interval": "How often the slow-changing reads are refreshed: device details, the outage log, the totals and the five-minute series. They barely move, so a long interval cuts request volume while the live values stay responsive.",
           "enable_series": "The only source of a measured battery power reading. Without it, battery power is inferred from the other flows and carries some noise.",
-          "enable_statistics": "Four extra requests per history interval. These totals change slowly, so leaving this off costs little.",
-          "import_history": "Backfills the device's daily solar and grid history as 'EP Cube ... (imported)' statistics you can add as Energy dashboard sources. Battery in/out is not available from the API."
+          "enable_statistics": "Four extra requests per history interval. These totals change slowly, so leaving this off costs little. Turn it on to feed the Energy dashboard from the lifetime total sensors."
         }
       }
     }

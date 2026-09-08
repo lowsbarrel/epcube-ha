@@ -23,16 +23,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: EpCubeConfigEntry) -> bo
     # After the first refresh: reverting a stale override needs device state.
     await coordinator.overrides.async_load()
 
-    # Backfill the device's past energy into HA statistics in the background, so
-    # a long history never delays setup. The device id is known after the first
-    # refresh above.
-    if coordinator.import_history:
-        entry.async_create_background_task(
-            hass,
-            coordinator.statistics.async_backfill(coordinator.device_id),
-            "epcube_history_backfill",
-        )
-
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
     async_register_services(hass)
