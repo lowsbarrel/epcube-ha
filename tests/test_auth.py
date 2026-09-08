@@ -77,6 +77,27 @@ def test_solve_handles_the_images_arriving_swapped():
     assert solution.x == pytest.approx(PIECE_X, abs=2)
 
 
+def test_solve_handles_a_piece_taller_than_the_background():
+    """A slider piece's shadow can make it a pixel taller than the background;
+    that overhang must be cropped, not sent to matchTemplate as an incomparable
+    (taller-but-narrower) pair, which OpenCV rejects with an assertion."""
+    rng = np.random.default_rng(seed=1)
+    background = rng.integers(0, 255, size=(79, 300, 3), dtype=np.uint8)
+    core = background[0:79, PIECE_X : PIECE_X + 40]
+    extra = rng.integers(0, 255, size=(1, 40, 3), dtype=np.uint8)
+    piece = np.vstack([core, extra])  # 80 rows: one taller than the 79-row background
+
+    solution = solve_challenge(
+        {
+            "originalImageBase64": _png(background),
+            "jigsawImageBase64": _png(piece),
+            "secretKey": SECRET,
+            "token": "challenge-token",
+        }
+    )
+    assert solution.x == pytest.approx(PIECE_X, abs=2)
+
+
 @pytest.mark.parametrize(
     "missing", ["originalImageBase64", "jigsawImageBase64", "secretKey", "token"]
 )
