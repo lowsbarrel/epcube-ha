@@ -80,10 +80,14 @@ def solve_challenge(rep_data: dict[str, Any]) -> Solution:
 
     background = cv2.cvtColor(decode("originalImageBase64"), cv2.COLOR_BGR2GRAY)
     piece = cv2.cvtColor(decode("jigsawImageBase64"), cv2.COLOR_BGR2GRAY)
-    # The two images occasionally arrive the other way round; matchTemplate needs
-    # the smaller one as the template.
-    if piece.shape[0] > background.shape[0] or piece.shape[1] > background.shape[1]:
+    # matchTemplate needs the template to fit inside the image in both dimensions.
+    # The pair occasionally arrives the other way round (pick the larger-area one
+    # as the background), and the piece's shadow can make it a pixel or two taller
+    # than the background - crop it to fit rather than let that overhang leave
+    # matchTemplate an incomparable pair (taller here, wider there) that it rejects.
+    if piece.size > background.size:
         background, piece = piece, background
+    piece = piece[: background.shape[0], : background.shape[1]]
 
     match = cv2.matchTemplate(background, piece, cv2.TM_CCOEFF_NORMED)
     _, confidence, _, location = cv2.minMaxLoc(match)
