@@ -52,8 +52,8 @@ Assistant prompts for a replacement; nothing else needs reconfiguring.
 
 | Option | Default | What it costs |
 | --- | --- | --- |
-| Update interval | 60 s | one live read per cycle; keeps the power/SoC entities responsive |
-| History interval | 30 min | how often the totals and five-minute series are read, on their own slow loop |
+| Update interval | 60 s | the live tier — live, mode, PV (3 reads) — every cycle; keeps power/SoC responsive |
+| History interval | 30 min | the slow reads — device details, outages, totals, five-minute series — on their own loop |
 | Read the five-minute history | on | one request per history interval; the only source of a *measured* battery power reading |
 | Read monthly/yearly/lifetime totals | off | four requests per history interval, for counters that barely move |
 

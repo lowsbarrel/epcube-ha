@@ -1,11 +1,12 @@
 """The polling coordinator.
 
-A fast loop refreshes live state every update interval; the heavy history reads
-run on their own slower loop, so the platforms get responsive live values without
-hammering a cloud API that has no published rate limit. Entities never issue
-their own requests. `EpCubeAsyncClient.snapshot` already treats the live read as
-the only mandatory one; this wraps that in Home Assistant's failure semantics and
-gates the heavy reads by cadence.
+A fast loop refreshes the live tier (live, mode, PV) every update interval; the
+heavy reads (device config, outages and history) run on their own slower loop, so
+the platforms get responsive live values without hammering a cloud API that has
+no published rate limit. Entities never issue their own requests.
+`EpCubeAsyncClient.snapshot` already treats the live read as the only mandatory
+one; this wraps that in Home Assistant's failure semantics and gates the heavy
+reads by cadence.
 """
 
 from __future__ import annotations
@@ -13,6 +14,7 @@ from __future__ import annotations
 import logging
 from datetime import timedelta
 from time import monotonic
+from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -21,7 +23,6 @@ from homeassistant.helpers.httpx_client import get_async_client
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from epcube_api import (
-    EnergyTotals,
     EpCubeAsyncClient,
     EpCubeAuthError,
     EpCubeError,
@@ -49,9 +50,11 @@ _LOGGER = logging.getLogger(__name__)
 
 type EpCubeConfigEntry = ConfigEntry[EpCubeCoordinator]
 
-# The slowly-changing aggregates, carried across fast cycles so their sensors
-# hold their last value instead of blanking between statistics-loop runs.
-_TOTALS_SECTIONS = ("today", "month", "year", "lifetime")
+# Sections read only on the heavy loop, carried across the live-only cycles so
+# their entities hold their last value instead of blanking between runs. The live
+# tier (live, mode, PV) is read every cycle and never cached; the series is also
+# left uncached, so battery power falls back to the current live-derived value.
+_SLOW_SECTIONS = ("detail", "network", "summary", "outages", "today", "month", "year", "lifetime")
 
 
 class EpCubeCoordinator(DataUpdateCoordinator[Snapshot]):
@@ -69,10 +72,10 @@ class EpCubeCoordinator(DataUpdateCoordinator[Snapshot]):
         self.statistics_interval: float = options.get(
             CONF_STATISTICS_INTERVAL, DEFAULT_STATISTICS_INTERVAL
         )
-        # The fast loop reads live state; the heavy history reads run at most once
-        # per statistics_interval. None until the first run, which always fetches.
+        # The fast loop reads the live tier; the heavy reads run at most once per
+        # statistics_interval. None until the first run, which always fetches.
         self._last_heavy: float | None = None
-        self._totals_cache: dict[str, EnergyTotals] = {}
+        self._slow_cache: dict[str, Any] = {}
 
         # Home Assistant's shared httpx client: connection pooling and a single
         # place where proxy and TLS settings are configured.
@@ -95,17 +98,19 @@ class EpCubeCoordinator(DataUpdateCoordinator[Snapshot]):
         self.overrides = OverrideManager(hass, self)
 
     async def _async_update_data(self) -> Snapshot:
-        # The heavy history reads (totals + series) are due on the first refresh
-        # and then once per statistics_interval; every other cycle is live-only.
+        # The heavy reads (device config, outages and history) are due on the
+        # first refresh and then once per statistics_interval; every other cycle
+        # reads only the live tier - live, mode and PV.
         heavy_due = (
             self._last_heavy is None or monotonic() - self._last_heavy >= self.statistics_interval
         )
         try:
             snapshot = await self.client.snapshot(
                 self.serial,
+                include_config=heavy_due,
                 include_series=self.include_series and heavy_due,
                 include_totals=self.include_statistics and heavy_due,
-                include_outages=True,
+                include_outages=heavy_due,
             )
         except EpCubeAuthError as err:
             # Tokens expire and cannot be refreshed without the password, so this
@@ -118,7 +123,7 @@ class EpCubeCoordinator(DataUpdateCoordinator[Snapshot]):
 
         if heavy_due:
             self._last_heavy = monotonic()
-        self._apply_totals_cache(snapshot)
+        self._carry_slow_sections(snapshot, heavy_due)
 
         # A degraded section is not a failed refresh: the live data is present
         # and the affected entities simply hold their previous value.
@@ -130,21 +135,21 @@ class EpCubeCoordinator(DataUpdateCoordinator[Snapshot]):
             )
         return snapshot
 
-    def _apply_totals_cache(self, snapshot: Snapshot) -> None:
-        """Serve the last good totals on cycles that did not read them.
+    def _carry_slow_sections(self, snapshot: Snapshot, heavy_due: bool) -> None:
+        """Keep the slow sections steady across live-only cycles.
 
-        A fresh aggregate refreshes the cache; its absence - whether because this
-        was a live-only cycle or the heavy read failed - is filled from the cache
-        so the energy-dashboard sensors keep their value instead of going
-        unavailable. Only the totals are cached: the series is left to fall back
-        to the live-derived battery power, which stays current every cycle.
+        On a heavy cycle each freshly read section refreshes the cache, and one
+        that failed keeps its last good value rather than the error; on a
+        live-only cycle the cache is served verbatim. This holds the energy and
+        device entities at their last value between statistics runs instead of
+        blanking them. The series is deliberately not cached: its battery power
+        falls back to the live-derived value, which is current every cycle.
         """
-        for name in _TOTALS_SECTIONS:
-            fresh: EnergyTotals | None = getattr(snapshot, name)
-            if fresh is not None:
-                self._totals_cache[name] = fresh
-            elif name in self._totals_cache:
-                setattr(snapshot, name, self._totals_cache[name])
+        for name in _SLOW_SECTIONS:
+            if heavy_due and name not in snapshot.errors:
+                self._slow_cache[name] = getattr(snapshot, name)
+            elif name in self._slow_cache:
+                setattr(snapshot, name, self._slow_cache[name])
                 snapshot.errors.pop(name, None)
 
     @property
