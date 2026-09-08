@@ -73,14 +73,14 @@ is not expressible.
 
 ## The integration
 
-One coordinator, one device, two cadences: a fast loop reads live state every
-update interval; the heavy history reads (the totals and the five-minute series)
-run on a slower statistics loop.
+One coordinator, one device, two cadences: a fast loop reads the live tier
+(live, mode, PV) every update interval; the heavy reads (device config, outages
+and history) run on a slower statistics loop.
 
 ```
 EpCubeCoordinator._async_update_data
-  → client.snapshot(include_totals=…, include_series=…)   concurrent reads, heavy ones only when due
-  → Snapshot                   live + mode + detail + pv + network (+ totals + series when due)
+  → client.snapshot(include_config=…, include_totals=…, …)   concurrent reads, heavy ones only when due
+  → Snapshot                   live + mode + pv  (+ detail + network + summary + outages + totals + series when due)
   → entities read from it      no entity issues its own request
 ```
 
@@ -89,11 +89,12 @@ fails records into `Snapshot.errors`, and entities bound to that section go
 unavailable rather than reporting a stale value as current
 (`EpCubeSectionEntity`).
 
-The totals change slowly, so between statistics-loop runs the coordinator
-carries the last aggregate forward (`_apply_totals_cache`) rather than blanking
-the energy-dashboard sensors; the same cache also rides out a transient failed
-read. The series is not cached - its one unique output, a *measured* battery
-power, falls back to the live-derived value on every fast cycle.
+Those slow sections change little, so between statistics-loop runs the
+coordinator carries their last values forward (`_carry_slow_sections`) rather
+than blanking the energy-dashboard and device sensors; the same cache also rides
+out a transient failed read. The series is not cached - its one unique output, a
+*measured* battery power, falls back to the live-derived value on every fast
+cycle.
 
 Two values have several possible sources of differing quality, and the entity
 exposes which one it used in a `source` attribute:

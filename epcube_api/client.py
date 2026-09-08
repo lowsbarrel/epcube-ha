@@ -181,6 +181,7 @@ class EpCubeAsyncClient(_ClientBase):
         self,
         sn: str | None = None,
         *,
+        include_config: bool = True,
         include_totals: bool = True,
         include_series: bool = True,
         include_outages: bool = False,
@@ -188,17 +189,22 @@ class EpCubeAsyncClient(_ClientBase):
         """Gather live state and its supporting reads concurrently.
 
         Only the live read is allowed to fail the call; everything else records
-        its error and leaves its section empty.
+        its error and leaves its section empty. The live tier - live, mode and
+        the per-string PV power - is always read; `include_config` adds the
+        slow-changing device sections (detail, network, the deviceList summary)
+        and the remaining flags add the history reads. A polling caller can read
+        the live tier often and the rest on a slower cadence by toggling these.
         """
         _, dev_id, live = await self.resolve_device(sn)
         today = date.today()
 
         sections: dict[str, Any] = {
             "mode": self.device.mode(dev_id),
-            "detail": self.device.detail(dev_id),
             "pv": self.device.pv_strings(dev_id),
-            "network": self.device.network(dev_id),
         }
+        if include_config:
+            sections["detail"] = self.device.detail(dev_id)
+            sections["network"] = self.device.network(dev_id)
         if include_outages:
             sections["outages"] = self.device.outages(dev_id)
         if include_series:
@@ -220,12 +226,14 @@ class EpCubeAsyncClient(_ClientBase):
             else:
                 values[name] = result
 
-        # deviceList is a whole-account read; match it to this device.
-        try:
-            devices = await self.device.all()
-            values["summary"] = next((d for d in devices if str(d.id) == str(dev_id)), None)
-        except EpCubeError as exc:
-            errors["summary"] = str(exc)
+        # deviceList is a whole-account read; match it to this device. Part of
+        # the config tier - the fields it carries (versions, capacity) are fixed.
+        if include_config:
+            try:
+                devices = await self.device.all()
+                values["summary"] = next((d for d in devices if str(d.id) == str(dev_id)), None)
+            except EpCubeError as exc:
+                errors["summary"] = str(exc)
 
         return Snapshot(dev_id=dev_id, live=live, errors=errors, **values)
 

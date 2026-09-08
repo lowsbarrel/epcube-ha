@@ -288,6 +288,20 @@ async def test_snapshot_gathers_every_section(client):
     assert snap.outages[0].minutes == pytest.approx(7.0)
 
 
+async def test_snapshot_config_tier_can_be_skipped(client, recorder: Recorder):
+    snap = await client.snapshot(SN, include_config=False)
+    # the live tier still arrives
+    assert snap.mode.mode is WorkMode.SELF_CONSUMPTION
+    assert len(snap.pv.active) == 2
+    # the slow-changing device sections are not read
+    assert snap.detail is None
+    assert snap.network is None
+    assert snap.summary is None
+    skipped = ("userDeviceInfo", "netWorkInfo", "deviceList")
+    paths = [r.url.path for r in recorder.requests]
+    assert not any(p.endswith(route) for p in paths for route in skipped)
+
+
 async def test_snapshot_prefers_measured_battery_power(client):
     snap = await client.snapshot(SN)
     # from the series, not derived from the live snapshot's flows

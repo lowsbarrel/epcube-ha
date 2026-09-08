@@ -38,10 +38,11 @@ DEFAULT_SCAN_INTERVAL = 60
 MIN_SCAN_INTERVAL = 10
 MAX_SCAN_INTERVAL = 3600
 
-# The heavy history reads (the totals and the five-minute series) run on their
-# own slower loop rather than every fast cycle: they cost several extra requests
-# and the numbers they return barely move within half an hour. The coordinator
-# carries the last totals forward between runs so their sensors never blank out.
+# The heavy reads - device details, outage log, the totals and the five-minute
+# series - run on their own slower loop rather than every fast cycle: the live
+# tier (live, mode, PV) stays responsive while these, which barely move within
+# half an hour, stop dominating the request rate. The coordinator carries their
+# last values forward between runs so their sensors never blank out.
 DEFAULT_STATISTICS_INTERVAL = 1800
 MIN_STATISTICS_INTERVAL = 300
 MAX_STATISTICS_INTERVAL = 86400
