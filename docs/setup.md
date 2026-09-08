@@ -56,6 +56,22 @@ Assistant prompts for a replacement; nothing else needs reconfiguring.
 | History interval | 30 min | the slow reads — device details, outages, totals, five-minute series — on their own loop |
 | Read the five-minute history | on | one request per history interval; the only source of a *measured* battery power reading |
 | Read monthly/yearly/lifetime totals | off | four requests per history interval, for counters that barely move |
+| Import past energy into the Energy dashboard | on | one request per history interval; backfills the device's own daily history |
+
+### Energy dashboard history
+
+HA's Energy dashboard is drawn from statistics it recorded live, so the days
+before you installed the integration start out blank. With **Import past energy**
+on, the integration backfills the device's own daily history as external
+statistics named **`EP Cube solar (imported)`**, **`EP Cube grid import
+(imported)`** and **`EP Cube grid export (imported)`**, and keeps them current on
+the history loop.
+
+To use them, open **Settings → Dashboards → Energy** and set the *Solar
+production*, *Grid consumption* and *Return to grid* sources to those imported
+statistics. The API only resolves **daily** granularity for past days, and does
+not report **battery** in/out energy at all (it returns zero at every scope), so
+battery flow cannot be charted.
 
 ## Development
 

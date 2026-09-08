@@ -31,6 +31,7 @@ CONF_SCAN_INTERVAL = "scan_interval"
 CONF_STATISTICS_INTERVAL = "statistics_interval"
 CONF_ENABLE_SERIES = "enable_series"
 CONF_ENABLE_STATISTICS = "enable_statistics"
+CONF_IMPORT_HISTORY = "import_history"
 
 # The live read is quick; the fast loop keeps the power/SoC entities responsive.
 # 60s halves the request rate of the old 30s default while still reading as live.
@@ -54,3 +55,8 @@ DEFAULT_ENABLE_SERIES = True
 # Monthly/yearly/lifetime totals change slowly, so they are opt-in. When on they
 # are read on the statistics loop, not every refresh.
 DEFAULT_ENABLE_STATISTICS = False
+
+# Backfill the device's own daily energy history into HA statistics (as external
+# `epcube:*` series) so the Energy dashboard shows the days before install. On by
+# default: it is read-only against the API and only writes its own statistic ids.
+DEFAULT_IMPORT_HISTORY = True
