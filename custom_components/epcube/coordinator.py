@@ -30,6 +30,7 @@ from epcube_api import (
     Snapshot,
 )
 
+from .battery import BatteryEnergyAccumulator
 from .const import (
     CONF_ENABLE_SERIES,
     CONF_ENABLE_STATISTICS,
@@ -101,6 +102,9 @@ class EpCubeCoordinator(DataUpdateCoordinator[Snapshot]):
 
         self.overrides = OverrideManager(hass, self)
         self.statistics = StatisticsImporter(self)
+        # The API's battery energy counters read zero, so derive them by tracking
+        # the stored-energy level, which the live read carries every fast cycle.
+        self.battery_energy = BatteryEnergyAccumulator()
 
     async def _async_update_data(self) -> Snapshot:
         # The heavy reads (device config, outages and history) are due on the
@@ -129,6 +133,7 @@ class EpCubeCoordinator(DataUpdateCoordinator[Snapshot]):
         if heavy_due:
             self._last_heavy = monotonic()
         self._carry_slow_sections(snapshot, heavy_due)
+        self.battery_energy.update(snapshot.live.battery_current_electricity)
 
         if heavy_due and self.import_history:
             try:

@@ -139,6 +139,12 @@
       "battery_discharged_today": {
         "name": "Battery discharged today"
       },
+      "battery_charged_energy": {
+        "name": "Battery charged"
+      },
+      "battery_discharged_energy": {
+        "name": "Battery discharged"
+      },
       "solar_lifetime": {
         "name": "Solar total"
       },
