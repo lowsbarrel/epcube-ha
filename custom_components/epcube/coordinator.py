@@ -33,6 +33,7 @@ from epcube_api import (
 from .const import (
     CONF_ENABLE_SERIES,
     CONF_ENABLE_STATISTICS,
+    CONF_IMPORT_HISTORY,
     CONF_REGION,
     CONF_SCAN_INTERVAL,
     CONF_SN,
@@ -40,11 +41,13 @@ from .const import (
     CONF_TOKEN,
     DEFAULT_ENABLE_SERIES,
     DEFAULT_ENABLE_STATISTICS,
+    DEFAULT_IMPORT_HISTORY,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_STATISTICS_INTERVAL,
     DOMAIN,
 )
 from .override import OverrideManager
+from .statistics import StatisticsImporter
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -72,6 +75,7 @@ class EpCubeCoordinator(DataUpdateCoordinator[Snapshot]):
         self.statistics_interval: float = options.get(
             CONF_STATISTICS_INTERVAL, DEFAULT_STATISTICS_INTERVAL
         )
+        self.import_history: bool = options.get(CONF_IMPORT_HISTORY, DEFAULT_IMPORT_HISTORY)
         # The fast loop reads the live tier; the heavy reads run at most once per
         # statistics_interval. None until the first run, which always fetches.
         self._last_heavy: float | None = None
@@ -96,6 +100,7 @@ class EpCubeCoordinator(DataUpdateCoordinator[Snapshot]):
         )
 
         self.overrides = OverrideManager(hass, self)
+        self.statistics = StatisticsImporter(self)
 
     async def _async_update_data(self) -> Snapshot:
         # The heavy reads (device config, outages and history) are due on the
@@ -124,6 +129,12 @@ class EpCubeCoordinator(DataUpdateCoordinator[Snapshot]):
         if heavy_due:
             self._last_heavy = monotonic()
         self._carry_slow_sections(snapshot, heavy_due)
+
+        if heavy_due and self.import_history:
+            try:
+                await self.statistics.async_refresh(snapshot.dev_id)
+            except Exception as err:  # a stats import must never fail the poll
+                _LOGGER.warning("energy history import failed: %s", err)
 
         # A degraded section is not a failed refresh: the live data is present
         # and the affected entities simply hold their previous value.

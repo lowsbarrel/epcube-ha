@@ -39,6 +39,7 @@ from .const import (
     CONF_DEVICE_ID,
     CONF_ENABLE_SERIES,
     CONF_ENABLE_STATISTICS,
+    CONF_IMPORT_HISTORY,
     CONF_REGION,
     CONF_SCAN_INTERVAL,
     CONF_SN,
@@ -46,6 +47,7 @@ from .const import (
     CONF_TOKEN,
     DEFAULT_ENABLE_SERIES,
     DEFAULT_ENABLE_STATISTICS,
+    DEFAULT_IMPORT_HISTORY,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_STATISTICS_INTERVAL,
     DOMAIN,
@@ -269,6 +271,10 @@ class EpCubeOptionsFlow(OptionsFlow):
                     vol.Required(
                         CONF_ENABLE_STATISTICS,
                         default=options.get(CONF_ENABLE_STATISTICS, DEFAULT_ENABLE_STATISTICS),
+                    ): BooleanSelector(),
+                    vol.Required(
+                        CONF_IMPORT_HISTORY,
+                        default=options.get(CONF_IMPORT_HISTORY, DEFAULT_IMPORT_HISTORY),
                     ): BooleanSelector(),
                 }
             ),
