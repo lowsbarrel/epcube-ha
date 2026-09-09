@@ -183,6 +183,14 @@ def test_load_and_battery_power_need_their_inputs():
     assert full.battery_power == 850
 
 
+def test_load_electricity_sums_backup_and_non_backup():
+    assert LiveSnapshot.model_validate({}).load_electricity is None
+    # one circuit present is enough; the absent one counts as zero
+    assert LiveSnapshot.model_validate({"backUpElectricity": 7.06}).load_electricity == 7.06
+    full = LiveSnapshot.model_validate({"backUpElectricity": 7.06, "nonBackUpElectricity": 1.2})
+    assert full.load_electricity == pytest.approx(8.26)
+
+
 # --- mode config -----------------------------------------------------------
 
 

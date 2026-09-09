@@ -88,6 +88,11 @@ derive it by tracking the stored-energy level each refresh (see `battery.py`).
 This is a best-effort figure whose accuracy improves with a shorter update
 interval.
 
+The Energy dashboard computes home consumption itself from the sources above, but
+the device also meters it directly on the backup and non-backup circuits. The
+**House consumption today** sensor exposes that reading - more accurate than the
+energy-balance figure, which carries the battery's conversion losses.
+
 ## Development
 
 ```sh
