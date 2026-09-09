@@ -162,6 +162,18 @@ class LiveSnapshot(EpCubeModel):
         return (self.back_up_power or 0.0) + (self.non_back_up_power or 0.0)
 
     @property
+    def load_electricity(self) -> float | None:
+        """Today's house consumption in kWh: backup plus non-backup circuits.
+
+        The device meters this directly, so it is more accurate than inferring
+        consumption from the energy balance - the latter carries the battery's
+        conversion losses, which this does not.
+        """
+        if self.back_up_electricity is None and self.non_back_up_electricity is None:
+            return None
+        return (self.back_up_electricity or 0.0) + (self.non_back_up_electricity or 0.0)
+
+    @property
     def battery_power(self) -> float | None:
         """Battery charge/discharge power in watts, derived. Positive = charging.
 

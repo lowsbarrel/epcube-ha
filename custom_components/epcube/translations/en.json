@@ -125,6 +125,9 @@
       "backup_today": {
         "name": "Backup load today"
       },
+      "house_consumption_today": {
+        "name": "House consumption today"
+      },
       "grid_import_today": {
         "name": "Grid import today"
       },

@@ -111,6 +111,11 @@ SENSORS: tuple[EpCubeSensorDescription, ...] = (
     _energy("solar_today", "solar_today", lambda s: s.live.solar_electricity),
     _energy("backup_today", "backup_today", lambda s: s.live.back_up_electricity),
     _energy(
+        "house_consumption_today",
+        "house_consumption_today",
+        lambda s: s.live.load_electricity,
+    ),
+    _energy(
         "grid_import_today",
         "grid_import_today",
         lambda s: s.today.grid_electricity_from if s.today else None,
