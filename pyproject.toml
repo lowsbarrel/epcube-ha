@@ -1,0 +1,63 @@
+[project]
+name = "epcube-api"
+version = "0.2.1"
+description = "Home Assistant integration and Python client for EP Cube home battery systems"
+readme = "README.md"
+requires-python = ">=3.14.2"
+license = { text = "MIT" }
+authors = [{ name = "lowsbarrel" }]
+dependencies = ["httpx>=0.27", "pydantic>=2.7"]
+
+[project.optional-dependencies]
+login = [
+    "opencv-python-headless",
+    "numpy",
+    "pillow",
+    "pycryptodome",
+]
+
+[project.scripts]
+epcube = "epcube_api.cli:main"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14",
+    "pytest>=8",
+    "pytest-asyncio>=0.24",
+    "respx>=0.21",
+    "homeassistant",
+    "pytest-cov",
+    "pyrefly>=1.3.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["epcube_api"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-q --cov=epcube_api --cov-report=term-missing --cov-fail-under=100"
+
+[tool.coverage.run]
+branch = true
+source = ["epcube_api"]
+
+[tool.coverage.report]
+show_missing = true
+exclude_also = [
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "UP", "B", "SIM", "C4", "RUF", "ASYNC"]
+
+[tool.pyrefly]
+preset = "strict"

@@ -1,0 +1,27 @@
+{
+	"editor.formatOnSave": true,
+	"[python]": {
+		"editor.defaultFormatter": "charliermarsh.ruff",
+		"editor.codeActionsOnSave": {
+			"source.fixAll.ruff": "explicit",
+			"source.organizeImports.ruff": "explicit"
+		}
+	},
+
+	"python.languageServer": "None",
+	"python.pyrefly.diagnosticMode": "workspace",
+	"python.testing.pytestEnabled": true,
+	"python.testing.unittestEnabled": false,
+
+	"files.exclude": {
+		"**/__pycache__": true,
+		"**/*.egg-info": true
+	},
+	"search.exclude": {
+		"**/.venv": true,
+		"**/.ruff_cache": true,
+		"**/.pytest_cache": true,
+		"**/uv.lock": true
+	},
+	"files.eol": "\n"
+}

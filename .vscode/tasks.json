@@ -1,0 +1,56 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "uv: sync",
+			"type": "shell",
+			"command": "uv sync --all-extras",
+			"problemMatcher": []
+		},
+		{
+			"label": "uv: test",
+			"type": "shell",
+			"command": "uv run pytest",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "uv: check",
+			"type": "shell",
+			"command": "uv run pyrefly check",
+			"problemMatcher": []
+		},
+		{
+			"label": "uv: lint",
+			"type": "shell",
+			"command": "uv run ruff check . && uv run ruff format --check .",
+			"problemMatcher": []
+		},
+		{
+			"label": "uv: format",
+			"type": "shell",
+			"command": "uv run ruff check --fix . && uv run ruff format .",
+			"problemMatcher": []
+		},
+		{
+			"label": "epcube: status",
+			"type": "shell",
+			"command": "uv run epcube status",
+			"problemMatcher": []
+		},
+		{
+			"label": "git: wire hooks",
+			"type": "shell",
+			"command": "git config core.hooksPath .githooks",
+			"problemMatcher": []
+		},
+		{
+			"label": "gate: pre-commit",
+			"type": "shell",
+			"command": "sh .githooks/pre-commit",
+			"options": { "cwd": "${workspaceFolder}" },
+			"group": { "kind": "test", "isDefault": true },
+			"problemMatcher": []
+		}
+	]
+}

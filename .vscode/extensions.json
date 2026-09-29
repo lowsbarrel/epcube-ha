@@ -1,0 +1,12 @@
+{
+	"recommendations": [
+		"ms-python.python",
+		"charliermarsh.ruff",
+		"meta.pyrefly",
+		"tamasfe.even-better-toml",
+		"editorconfig.editorconfig",
+		"github.vscode-github-actions",
+		"redhat.vscode-yaml"
+	],
+	"unwantedRecommendations": ["astral-sh.ty", "ms-python.vscode-pylance"]
+}

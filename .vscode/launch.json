@@ -1,0 +1,31 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "epcube CLI: status",
+			"type": "debugpy",
+			"request": "launch",
+			"module": "epcube_api.cli",
+			"args": ["status"],
+			"console": "integratedTerminal",
+			"justMyCode": false
+		},
+		{
+			"name": "Debug current file",
+			"type": "debugpy",
+			"request": "launch",
+			"program": "${file}",
+			"console": "integratedTerminal",
+			"justMyCode": false
+		},
+		{
+			"name": "Debug current test file",
+			"type": "debugpy",
+			"request": "launch",
+			"module": "pytest",
+			"args": ["${file}", "-vv", "--no-cov"],
+			"console": "integratedTerminal",
+			"justMyCode": false
+		}
+	]
+}
