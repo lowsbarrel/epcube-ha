@@ -1,0 +1,8 @@
+{
+  "name": "EP Cube",
+  "homeassistant": "2026.3.0",
+  "content_in_root": false,
+  "zip_release": true,
+  "filename": "epcube.zip",
+  "hide_default_branch": true
+}
