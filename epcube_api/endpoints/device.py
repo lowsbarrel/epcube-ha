@@ -1,0 +1,127 @@
+from __future__ import annotations
+
+from datetime import date
+from typing import Any
+
+from ..const import WorkMode
+from ..models import (
+    DeviceDetail,
+    DeviceSummary,
+    LiveSnapshot,
+    ModeConfig,
+    NetworkInfo,
+    OutageEvent,
+    PvStrings,
+    SwitchModeRequest,
+    TouWindow,
+    Warranty,
+)
+from .base import EndpointGroup, parse_list, parse_model
+
+
+class DeviceEndpoints(EndpointGroup):
+    async def home_info(self, sn: str, day: date | None = None) -> LiveSnapshot:
+        return await self._get(
+            "device/homeDeviceInfo",
+            parse_model(LiveSnapshot),
+            sgSn=sn,
+            dayMonthYearFormat=(day or date.today()).strftime("%Y-%m-%d"),
+        )
+
+    async def all(self) -> list[DeviceSummary]:
+        return await self._get("device/deviceList", parse_list(DeviceSummary))
+
+    async def detail(self, dev_id: str) -> DeviceDetail:
+        return await self._get("device/userDeviceInfo", parse_model(DeviceDetail), devId=dev_id)
+
+    async def mode(self, dev_id: str) -> ModeConfig:
+        return await self._get("device/getSwitchMode", parse_model(ModeConfig), devId=dev_id)
+
+    async def pv_strings(self, dev_id: str) -> PvStrings:
+        return await self._get("device/getSolarPvPower", PvStrings.from_api, devId=dev_id)
+
+    async def outages(self, dev_id: str) -> list[OutageEvent]:
+        return await self._get("device/getDevPowerCutLog", parse_list(OutageEvent), devId=dev_id)
+
+    async def network(self, dev_id: str) -> NetworkInfo:
+        return await self._get("device/netWorkInfo", parse_model(NetworkInfo), devId=dev_id)
+
+    async def warranty(self, dev_id: str) -> Warranty:
+        return await self._get("device/getWarranty", parse_model(Warranty), devId=dev_id)
+
+    async def firmware_version(self, dev_id: str) -> Any:
+        return await self._get("device/getDevPcsVersion", devId=dev_id)
+
+    async def check_upgrade(self, dev_id: str) -> Any:
+        return await self._get("device/checkUpgrade", devId=dev_id)
+
+    async def switch_mode(self, request: SwitchModeRequest) -> Any:
+        return await self._post("device/switchMode", body=request.api_dump())
+
+    async def set_mode(
+        self,
+        config: ModeConfig,
+        mode: WorkMode | int,
+        *,
+        dev_id: str | None = None,
+    ) -> Any:
+        request = SwitchModeRequest.from_config(config, dev_id=dev_id, work_status=mode)
+        return await self.switch_mode(request)
+
+    async def set_reserve_soc(
+        self,
+        config: ModeConfig,
+        *,
+        self_consumption: int | None = None,
+        backup: int | None = None,
+        dev_id: str | None = None,
+    ) -> Any:
+        request = SwitchModeRequest.from_config(config, dev_id=dev_id, only_save=True)
+        changes: dict[str, Any] = {}
+        if self_consumption is not None:
+            changes["self_consumption_reserve_soc"] = str(self_consumption)
+        if backup is not None:
+            changes["backup_power_reserve_soc"] = str(backup)
+        if not changes:
+            raise ValueError("nothing to change: pass self_consumption and/or backup")
+        return await self.switch_mode(request.with_changes(**changes))
+
+    async def set_grid_charging(
+        self,
+        config: ModeConfig,
+        allowed: bool,
+        *,
+        dev_id: str | None = None,
+    ) -> Any:
+        request = SwitchModeRequest.from_config(config, dev_id=dev_id, only_save=True)
+        return await self.switch_mode(
+            request.with_changes(allow_charging_from_grid="1" if allowed else "0")
+        )
+
+    async def set_tou_schedule(
+        self,
+        config: ModeConfig,
+        *,
+        peak: list[TouWindow] | list[str] | None = None,
+        mid_peak: list[TouWindow] | list[str] | None = None,
+        off_peak: list[TouWindow] | list[str] | None = None,
+        peak_non_workday: list[TouWindow] | list[str] | None = None,
+        mid_peak_non_workday: list[TouWindow] | list[str] | None = None,
+        off_peak_non_workday: list[TouWindow] | list[str] | None = None,
+        apply: bool = False,
+        dev_id: str | None = None,
+    ) -> Any:
+        request = SwitchModeRequest.from_config(
+            config,
+            dev_id=dev_id,
+            work_status=WorkMode.TIME_OF_USE if apply else None,
+            only_save=not apply,
+        ).set_tou_schedule(
+            peak=peak,
+            mid_peak=mid_peak,
+            off_peak=off_peak,
+            peak_non_workday=peak_non_workday,
+            mid_peak_non_workday=mid_peak_non_workday,
+            off_peak_non_workday=off_peak_non_workday,
+        )
+        return await self.switch_mode(request)
