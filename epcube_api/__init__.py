@@ -36,7 +36,7 @@ from .models import (
 from .models.snapshot import Snapshot
 from .registry import ROUTES, Route
 
-__version__ = "0.3.0"
+__version__ = "0.2.2"
 
 __all__ = [
     "BASE_URLS",
