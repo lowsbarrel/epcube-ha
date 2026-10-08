@@ -12,7 +12,12 @@ from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
 from PIL import Image
 
-from epcube_api import EpCubeAsyncClient, EpCubeCaptchaError, EpCubeError
+from epcube_api import (
+    EpCubeAsyncClient,
+    EpCubeCaptchaError,
+    EpCubeConnectionError,
+    EpCubeError,
+)
 from epcube_api.auth import async_login, solve_challenge
 from epcube_api.exceptions import EpCubeLoginError
 
@@ -163,6 +168,17 @@ async def test_bad_credentials_are_not_retried():
     with pytest.raises(EpCubeLoginError, match="credentials rejected"):
         await run_login(script, attempts=5)
     assert script.paths.count("open/common/login") == 1
+
+
+async def test_a_network_failure_is_not_reported_as_a_captcha_error():
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("down", request=request)
+
+    http = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    async with EpCubeAsyncClient(region="EU", http_client=http, max_attempts=1) as client:
+        with pytest.raises(EpCubeConnectionError):
+            await async_login(client, "a@b.c", "pw", attempts=5)
+    await http.aclose()
 
 
 async def test_a_malformed_challenge_response_is_retried_then_reported():

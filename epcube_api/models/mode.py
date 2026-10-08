@@ -6,10 +6,12 @@ from typing import Any, Self, override
 from pydantic import Field, field_validator
 
 from ..const import DayType, WorkMode
-from .base import ApiBool, ApiFloat, ApiInt, ApiStr, ApiStrList, EpCubeModel, to_int_enum
+from .base import ApiBool, ApiInt, ApiStr, ApiStrList, EpCubeModel, to_int_enum
 
 _WINDOW_RE = re.compile(
-    r"^(?P<start>\d{1,2}:\d{2})_(?P<end>\d{1,2}:\d{2})(?:_(?P<price>[-\d.]+))?$"
+    r"^(?P<start>(?:[01]?\d|2[0-4]):[0-5]\d)_"
+    r"(?P<end>(?:[01]?\d|2[0-4]):[0-5]\d)"
+    r"(?:_(?P<price>-?\d+(?:\.\d+)?))?$"
 )
 
 
@@ -134,20 +136,4 @@ class ModeConfig(EpCubeModel):
                 self.mid_peak_time_list_non_work_day,
                 self.off_peak_time_list_non_work_day,
             )
-        )
-
-
-class ReserveLevels(EpCubeModel):
-    self_consumption: ApiFloat = None
-    backup: ApiFloat = None
-    ev_charger: ApiFloat = None
-    charging_limit: ApiFloat = None
-
-    @classmethod
-    def from_config(cls, config: ModeConfig) -> Self:
-        return cls(
-            self_consumption=config.self_consumption_reserve_soc,
-            backup=config.backup_power_reserve_soc,
-            ev_charger=config.ev_charger_reserve_soc,
-            charging_limit=config.charging_limit_soc,
         )

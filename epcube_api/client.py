@@ -1,16 +1,17 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import date
+from datetime import date, datetime
 from types import TracebackType
 from typing import Any, Self
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import httpx
 
 from .const import (
     DEFAULT_CONNECT_TIMEOUT,
     DEFAULT_LANGUAGE,
-    DEFAULT_MAX_RETRIES,
+    DEFAULT_MAX_ATTEMPTS,
     DEFAULT_TIMEOUT,
     Region,
     Scope,
@@ -32,34 +33,55 @@ from .models.snapshot import Snapshot
 from .transport import (
     AsyncTransport,
     CallRecord,
-    Request,
     TransportConfig,
     redact,
 )
 
 
+def _plant_today(live: LiveSnapshot) -> date:
+    # Host TZ can be a day behind a UTC+ plant near local midnight.
+    try:
+        zone = ZoneInfo(live.from_timezone) if live.from_timezone else None
+    except ZoneInfoNotFoundError, ValueError:
+        zone = None
+    return datetime.now(zone).date()
+
+
 class RawEndpoints(EndpointGroup):
     async def get(self, path: str, **params: Any) -> Any:
-        return await self._call(Request("GET", path, params=params or None))
+        return await self._get(path, **params)
 
     async def post(self, path: str, body: dict[str, Any] | None = None, **params: Any) -> Any:
-        return await self._call(Request("POST", path, params=params or None, json=body))
+        return await self._post(path, body, **params)
 
 
-class _ClientBase:
+class EpCubeAsyncClient:
     _transport: AsyncTransport
 
-    def _bind(self, transport: AsyncTransport) -> None:
-        self._transport = transport
-        self.account = AccountEndpoints(transport)
-        self.device = DeviceEndpoints(transport)
-        self.data = DataEndpoints(transport)
-        self.public = PublicEndpoints(transport)
-        self.vpp = VppEndpoints(transport)
-        self.breaker = SmartBreakerEndpoints(transport)
-        self.messages = MessageEndpoints(transport)
-        self.support = SupportEndpoints(transport)
-        self.raw = RawEndpoints(transport)
+    def __init__(
+        self,
+        region: Region | str = Region.EU,
+        token: str | None = None,
+        *,
+        timeout: float = DEFAULT_TIMEOUT,
+        connect_timeout: float = DEFAULT_CONNECT_TIMEOUT,
+        max_attempts: int = DEFAULT_MAX_ATTEMPTS,
+        language: str = DEFAULT_LANGUAGE,
+        http_client: httpx.AsyncClient | None = None,
+    ) -> None:
+        self._transport = AsyncTransport(
+            self._config(region, token, timeout, connect_timeout, max_attempts, language),
+            http_client,
+        )
+        self.account = AccountEndpoints(self._transport)
+        self.device = DeviceEndpoints(self._transport)
+        self.data = DataEndpoints(self._transport)
+        self.public = PublicEndpoints(self._transport)
+        self.vpp = VppEndpoints(self._transport)
+        self.breaker = SmartBreakerEndpoints(self._transport)
+        self.messages = MessageEndpoints(self._transport)
+        self.support = SupportEndpoints(self._transport)
+        self.raw = RawEndpoints(self._transport)
 
     @staticmethod
     def _config(
@@ -67,7 +89,7 @@ class _ClientBase:
         token: str | None,
         timeout: float,
         connect_timeout: float,
-        max_retries: int,
+        max_attempts: int,
         language: str,
     ) -> TransportConfig:
         return TransportConfig(
@@ -75,7 +97,7 @@ class _ClientBase:
             token=token,
             timeout=timeout,
             connect_timeout=connect_timeout,
-            max_retries=max_retries,
+            max_attempts=max_attempts,
             language=language,
         )
 
@@ -101,22 +123,6 @@ class _ClientBase:
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}(region={self.region.value}, token={redact(self.token)})"
-
-
-class EpCubeAsyncClient(_ClientBase):
-    def __init__(
-        self,
-        region: Region | str = Region.EU,
-        token: str | None = None,
-        *,
-        timeout: float = DEFAULT_TIMEOUT,
-        connect_timeout: float = DEFAULT_CONNECT_TIMEOUT,
-        max_retries: int = DEFAULT_MAX_RETRIES,
-        language: str = DEFAULT_LANGUAGE,
-        http_client: httpx.AsyncClient | None = None,
-    ) -> None:
-        config = self._config(region, token, timeout, connect_timeout, max_retries, language)
-        self._bind(AsyncTransport(config, http_client))
 
     async def login(self, username: str, password: str, *, attempts: int = 5) -> str:
         from .auth import async_login
@@ -146,7 +152,7 @@ class EpCubeAsyncClient(_ClientBase):
         include_outages: bool = False,
     ) -> Snapshot:
         _, dev_id, live = await self.resolve_device(sn)
-        today = date.today()
+        today = _plant_today(live)
 
         sections: dict[str, Any] = {
             "mode": self.device.mode(dev_id),
@@ -155,6 +161,7 @@ class EpCubeAsyncClient(_ClientBase):
         if include_config:
             sections["detail"] = self.device.detail(dev_id)
             sections["network"] = self.device.network(dev_id)
+            sections["summary"] = self.device.all()
         if include_outages:
             sections["outages"] = self.device.outages(dev_id)
         if include_series:
@@ -176,13 +183,9 @@ class EpCubeAsyncClient(_ClientBase):
             else:
                 values[name] = result
 
-        # deviceList is a whole-account read; match it to this device at the config tier.
-        if include_config:
-            try:
-                devices = await self.device.all()
-                values["summary"] = next((d for d in devices if d.id == dev_id), None)
-            except EpCubeError as exc:
-                errors["summary"] = str(exc)
+        # deviceList is a whole-account read; match it to this device.
+        if "summary" in values:
+            values["summary"] = next((d for d in values["summary"] if d.id == dev_id), None)
 
         return Snapshot(dev_id=dev_id, live=live, errors=errors, **values)
 

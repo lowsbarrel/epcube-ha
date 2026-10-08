@@ -77,7 +77,7 @@ system:
 
 ```sh
 uv run epcube status                  # one screen
-uv run epcube status --json           # everything, for diffing
+uv run epcube --json status           # everything, for diffing
 uv run epcube series --scope month --field solar_electricity
 uv run epcube probe device/getAssetData --param devId=1234
 ```
@@ -93,15 +93,7 @@ about the device. Two bugs were found only by running the integration against a
 live system: the battery-power **sign** was inverted, and `live.solar_power`
 turned out not to be total PV production at all.
 
-```sh
-uv build --wheel
-# an image of the stock HA plus the wheel installed
-docker build -t epcube-ha-test -f Dockerfile.test .
-docker run -d --name epcube-ha -v "$PWD/ha-config:/config" -p 8123:8123 epcube-ha-test
-docker logs -f epcube-ha | grep -i epcube
-```
-
-Add the integration at <http://localhost:8123>, then check the entity states.
+Add the integration to a real Home Assistant instance, then check the entity states.
 Look for `unknown` or `unavailable`: against a healthy system every entity should
 carry a value, and the coordinator should log `success: True` on each interval.
 

@@ -7,7 +7,12 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-from .exceptions import EpCubeCaptchaError, EpCubeError, EpCubeLoginError
+from .exceptions import (
+    EpCubeCaptchaError,
+    EpCubeConnectionError,
+    EpCubeError,
+    EpCubeLoginError,
+)
 
 if TYPE_CHECKING:
     from .client import EpCubeAsyncClient
@@ -134,6 +139,8 @@ async def async_login(
                 continue
             return _token_from(await client.public.login(username, password, solution.verification))
         except EpCubeLoginError:
+            raise
+        except EpCubeConnectionError:
             raise
         except (EpCubeError, KeyError, ValueError) as exc:
             last = exc

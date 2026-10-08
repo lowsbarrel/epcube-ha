@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import UTC, date, datetime, tzinfo
+from typing import Self, override
 
 import httpx
 import pytest
@@ -246,7 +247,7 @@ async def test_missing_route_raises_not_found(client: EpCubeAsyncClient):
 async def test_server_error_is_retried_then_raised(recorder: Recorder):
     recorder.overrides["device/netWorkInfo"] = httpx.Response(500, json={"message": "boom"})
     http = httpx.AsyncClient(transport=httpx.MockTransport(recorder.handler))
-    async with EpCubeAsyncClient(token="t", http_client=http, max_retries=2) as client:
+    async with EpCubeAsyncClient(token="t", http_client=http, max_attempts=2) as client:
         with pytest.raises(EpCubeServerError):
             await client.device.network(DEV_ID)
     attempts = [r for r in recorder.requests if r.url.path.endswith("netWorkInfo")]
@@ -305,11 +306,59 @@ async def test_snapshot_survives_a_failing_supplementary_route(recorder: Recorde
         500, json={"message": "slow"}
     )
     http = httpx.AsyncClient(transport=httpx.MockTransport(recorder.handler))
-    async with EpCubeAsyncClient(token="t", http_client=http, max_retries=1) as client:
+    async with EpCubeAsyncClient(token="t", http_client=http, max_attempts=1) as client:
         snap = await client.snapshot(SN)
     assert snap.live.battery_soc == 86
     assert not snap.complete
     assert "today" in snap.errors
+
+
+async def test_snapshot_survives_an_unparseable_device_list_item(recorder: Recorder):
+    from .conftest import DEVICE_LIST
+
+    recorder.overrides["device/deviceList"] = httpx.Response(
+        200, json={"status": 200, "data": [DEVICE_LIST[0], {"id": "bad", "workParam": 5}]}
+    )
+    http = httpx.AsyncClient(transport=httpx.MockTransport(recorder.handler))
+    async with EpCubeAsyncClient(token="t", http_client=http) as client:
+        snap = await client.snapshot(SN)
+    assert snap.live.battery_soc == 86
+    assert "summary" in snap.errors
+
+
+@pytest.mark.parametrize(
+    ("tz", "expected"),
+    [("Europe/Rome", "2026-09-02"), ("Not/AZone", "2026-09-01"), (None, "2026-09-01")],
+)
+async def test_snapshot_today_follows_the_plant_zone(
+    recorder: Recorder,
+    monkeypatch: pytest.MonkeyPatch,
+    tz: str | None,
+    expected: str,
+):
+    import epcube_api.client as client_module
+
+    from .conftest import LIVE
+
+    data = {k: v for k, v in LIVE.items() if k != "fromTimeZone"}
+    if tz is not None:
+        data["fromTimeZone"] = tz
+    recorder.overrides["device/homeDeviceInfo"] = httpx.Response(
+        200, json={"status": 200, "data": data}
+    )
+
+    class FixedDatetime(datetime):
+        @classmethod
+        @override
+        def now(cls, tz: tzinfo | None = None) -> Self:
+            instant = cls(2026, 9, 1, 22, 30, tzinfo=UTC)
+            return instant.astimezone(tz) if tz else instant.replace(tzinfo=None)
+
+    monkeypatch.setattr(client_module, "datetime", FixedDatetime)
+    http = httpx.AsyncClient(transport=httpx.MockTransport(recorder.handler))
+    async with EpCubeAsyncClient(token="t", http_client=http) as client:
+        await client.snapshot(SN, include_totals=False)
+    assert recorder.sent("queryDataGraphV2").url.params["queryDateStr"] == expected
 
 
 async def test_snapshot_resolves_the_serial_from_the_account(client: EpCubeAsyncClient):

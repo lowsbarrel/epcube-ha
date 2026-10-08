@@ -1,11 +1,12 @@
 # EP Cube API endpoint inventory
 
-Extracted from the official Android app, `com.eternalplanetenergy.epcube` 2.5.1,
-with `tools/extract_apk_endpoints.py`. Routes are stored Retrofit-style (no
-leading slash) in the dex string tables; prefix them with the regional base URL
-plus `/`, e.g. `https://monitoring-eu.epcube.com/api/device/queryDataGraphV2`.
+Extracted from the official Android app, `com.eternalplanetenergy.epcube` 2.5.1.
+Routes are stored Retrofit-style (no leading slash); prefix them with the
+regional base URL plus `/`, e.g.
+`https://monitoring-eu.epcube.com/api/device/queryDataGraphV2`. `epcube_api/registry.py`
+is the record, and `uv run epcube routes` prints it.
 
-**145 routes exist. The Home Assistant integration uses 10.**
+**118 routes exist. The Home Assistant integration uses 10.**
 
 Legend: **[HA]** used by the integration · **[✓]** verified working against a
 real account · **[?]** present in the app, not yet tested.
@@ -140,16 +141,13 @@ afterSale/   submitRepairs
 
 ---
 
-## Reproducing this
-
-```
-uv run tools/extract_apk_endpoints.py <path-to-apk-or-xapk>
-```
+## Where the list came from
 
 The app is a native Kotlin app using Retrofit; route strings sit in the `.dex`
 string tables in plain UTF-8, so no decompiler is needed. Repository class names
 in the same tables (`DeviceRepositoryImpl$queryDataGraphV2$1`) confirm which
-routes are actually called and under what method name.
+routes are actually called and under what method name. `epcube_api/registry.py`
+holds the resulting list and its coverage.
 
 A route with no wrapper is still reachable: `client.raw.get(path, **params)` (or
 `client.raw.post`) from Python, `uv run epcube probe <path> --param key=value`

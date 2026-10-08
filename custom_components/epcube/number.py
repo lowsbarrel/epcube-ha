@@ -12,12 +12,10 @@ from homeassistant.components.number import (
 )
 from homeassistant.const import PERCENTAGE, EntityCategory
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from epcube_api import ModeConfig
 
-from .const import DOMAIN
 from .coordinator import EpCubeConfigEntry, EpCubeCoordinator
 from .entity import EpCubeEntity
 
@@ -96,16 +94,14 @@ class EpCubeNumber(EpCubeNumberEntity):
 
     @override
     async def async_set_native_value(self, value: float) -> None:
-        config = self.snapshot.mode
-        if config is None:
-            raise HomeAssistantError(
-                translation_domain=DOMAIN, translation_key="config_unavailable"
-            )
         # onlySave, so adjusting a reserve never changes the operating mode.
         soc = int(value)
         device = self.coordinator.client.device
         if self._description.argument == "backup":
-            call = device.set_reserve_soc(config, backup=soc)
+            await self.coordinator.async_write(
+                lambda config: device.set_reserve_soc(config, backup=soc)
+            )
         else:
-            call = device.set_reserve_soc(config, self_consumption=soc)
-        await self.coordinator.async_apply(call)
+            await self.coordinator.async_write(
+                lambda config: device.set_reserve_soc(config, self_consumption=soc)
+            )

@@ -6,7 +6,7 @@ import pytest
 
 from epcube_api import EpCubeAPIError, Region, Scope, WorkMode
 from epcube_api.const import DayType, SystemStatus
-from epcube_api.registry import ROUTES, Verified, by_group, coverage, find
+from epcube_api.registry import ROUTES, Verified, by_group, coverage
 
 
 def test_region_parsing_and_urls():
@@ -44,12 +44,10 @@ def test_registry_lookup_and_coverage():
     assert 0 < stats["wrapped"] <= stats["total"]
     assert 0 < stats["verified"] <= stats["wrapped"]
 
-    live = find("device/homeDeviceInfo")
-    assert live is not None
+    live = next(r for r in ROUTES if r.path == "device/homeDeviceInfo")
     assert live.wrapped
     assert live.wrapper == "device.home_info"
     assert live.verified is Verified.WORKING
-    assert find("device/doesNotExist") is None
 
     groups = by_group()
     assert "device" in groups

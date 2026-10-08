@@ -49,14 +49,8 @@ class EpCubeGridChargingSwitch(EpCubeSwitchEntity):
         await self._set(False)
 
     async def _set(self, allowed: bool) -> None:
-        config = self.snapshot.mode
-        if config is None:
-            raise HomeAssistantError(
-                translation_domain=DOMAIN, translation_key="config_unavailable"
-            )
-
-        await self.coordinator.async_apply(
-            self.coordinator.client.device.set_grid_charging(config, allowed)
+        await self.coordinator.async_write(
+            lambda config: self.coordinator.client.device.set_grid_charging(config, allowed)
         )
 
         # Some devices accept this write with HTTP 200 but keep the old value, so read back.

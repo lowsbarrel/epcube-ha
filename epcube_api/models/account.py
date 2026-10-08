@@ -26,9 +26,3 @@ class Account(EpCubeModel):
     is_install_user: ApiBool = None
     create_time: ApiDateTime = None
     device_num: ApiInt = None
-
-
-class LoginResult(EpCubeModel):
-    token: ApiStr = None
-    user_id: ApiStr = None
-    expire_time: ApiDateTime = None

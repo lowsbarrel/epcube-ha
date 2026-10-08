@@ -24,10 +24,16 @@ from homeassistant.helpers.selector import (
     TextSelectorType,
 )
 
-from epcube_api import EpCubeAsyncClient, EpCubeAuthError, EpCubeError, Region
+from epcube_api import (
+    EpCubeAsyncClient,
+    EpCubeAuthError,
+    EpCubeConnectionError,
+    EpCubeError,
+    EpCubeLoginError,
+    Region,
+)
 
 from .const import (
-    CONF_DEVICE_ID,
     CONF_ENABLE_SERIES,
     CONF_ENABLE_STATISTICS,
     CONF_REGION,
@@ -87,12 +93,9 @@ def _login_available() -> bool:
 class EpCubeConfigFlow(ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
-    def __init__(self) -> None:
-        self._region: str = Region.EU.value.lower()
-
     @override
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
-        if not _login_available():
+        if not await self.hass.async_add_executor_job(_login_available):
             return await self.async_step_token()
         return self.async_show_menu(step_id="user", menu_options=["token", "credentials"])
 
@@ -115,8 +118,10 @@ class EpCubeConfigFlow(ConfigFlow, domain=DOMAIN):
             )
             try:
                 token = await client.login(user_input["email"], user_input["password"])
-            except EpCubeAuthError:
+            except EpCubeLoginError:
                 errors["base"] = "invalid_auth"
+            except EpCubeConnectionError:
+                errors["base"] = "cannot_connect"
             except EpCubeError as err:
                 _LOGGER.debug("login failed: %s", err)
                 errors["base"] = "captcha_failed"
@@ -129,7 +134,6 @@ class EpCubeConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
     async def async_step_reauth(self, entry_data: dict[str, Any]) -> ConfigFlowResult:
-        self._region = entry_data.get(CONF_REGION, Region.EU.value)
         return await self.async_step_reauth_confirm()
 
     async def async_step_reauth_confirm(
@@ -177,7 +181,7 @@ class EpCubeConfigFlow(ConfigFlow, domain=DOMAIN):
             if not serial:
                 errors["base"] = "no_device"
                 return None
-            live = await client.device.home_info(serial)
+            await client.device.home_info(serial)
         except EpCubeAuthError:
             # A region mismatch is indistinguishable from an expired token; the message names both.
             errors["base"] = "invalid_auth"
@@ -195,7 +199,6 @@ class EpCubeConfigFlow(ConfigFlow, domain=DOMAIN):
                 CONF_REGION: region,
                 CONF_TOKEN: token,
                 CONF_SN: serial,
-                CONF_DEVICE_ID: live.dev_id,
             },
         )
 
