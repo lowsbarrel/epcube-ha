@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 from collections.abc import AsyncIterator
 from typing import Any
@@ -7,6 +8,7 @@ from typing import Any
 import httpx
 import pytest
 
+from custom_components.epcube.coordinator import EpCubeCoordinator
 from epcube_api import EpCubeAsyncClient
 
 DEV_ID = "1234"
@@ -41,6 +43,7 @@ MODE: dict[str, Any] = {
     "devId": DEV_ID,
     "workStatus": "1",
     "onlySave": "1",
+    "weatherWatch": "1",
     "backupPowerReserveSoc": "100",
     # The API's own misspelling; the correctly-spelled key is ignored on write.
     "selfConsumptioinReserveSoc": "15",
@@ -226,3 +229,19 @@ async def client(recorder: Recorder) -> AsyncIterator[EpCubeAsyncClient]:
     async with EpCubeAsyncClient(region="EU", token="test-token", http_client=http) as c:
         yield c
     await http.aclose()
+
+
+@pytest.fixture
+async def coordinator(client: EpCubeAsyncClient) -> EpCubeCoordinator:
+    coordinator = object.__new__(EpCubeCoordinator)
+    coordinator.client = client
+    coordinator.data = await client.snapshot(
+        SN, include_config=False, include_totals=False, include_series=False
+    )
+    coordinator._write_lock = asyncio.Lock()
+
+    async def refresh() -> None:
+        pass
+
+    coordinator.async_refresh = refresh
+    return coordinator

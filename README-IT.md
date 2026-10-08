@@ -40,7 +40,7 @@ Indice:
 
 - **Controlli** - Modalità operativa (autoconsumo, fasce orarie, backup), livelli di riserva per autoconsumo e backup, e ricarica dalla rete. Ogni scrittura porta con sé la configurazione completa del dispositivo, quindi cambiare un'impostazione non ne azzera mai un'altra.
 
-- **Override della batteria** - Forza la carica, forza la scarica o mantieni la batteria per una durata stabilita; al termine viene ripristinata la riserva precedente, anche dopo un riavvio.
+- **Override della batteria** - Forza la carica, forza la scarica o mantieni la batteria per una durata stabilita; al termine viene ripristinata la riserva di autoconsumo precedente, anche dopo un riavvio, e un ripristino fallito viene ritentato.
 
 - **Stato** - Indicatori di connessione, guasto, allarme e blackout, numero di blackout e ultimo blackout, ultima connessione, rete Wi-Fi e livello del segnale.
 
@@ -92,7 +92,7 @@ L'API lascia a zero i propri contatori di energia della batteria, quindi **Batte
 |`epcube.force_charge`|Carica fino a un livello obiettivo alzando la riserva, per una durata|
 |`epcube.force_discharge`|Lascia che la batteria alimenti la casa fino a un livello obiettivo|
 |`epcube.hold_battery`|Mantiene la batteria al livello attuale|
-|`epcube.clear_override`|Termina qualsiasi override e ripristina le impostazioni precedenti|
+|`epcube.clear_override`|Termina qualsiasi override e ripristina la riserva di autoconsumo precedente|
 
 ### Il client e la CLI
 
@@ -193,7 +193,7 @@ I contributi sono benvenuti, ed estendere la copertura dell'API risparmia alla p
 
 - L'integrazione parla solo con il cloud EP Cube della tua regione; non ci sono altri server né telemetria.
 - Il token di accesso sta nella config entry di Home Assistant; la CLI lo legge dall'ambiente o da un `.env` escluso da git.
-- L'API restituisce nome, indirizzo, coordinate GPS ed email del proprietario su diversi endpoint. Il download della diagnostica li oscura; un `epcube status --json` o un `probe` grezzo no.
+- L'API restituisce nome, indirizzo, coordinate GPS ed email del proprietario su diversi endpoint. Il download della diagnostica li oscura; un `epcube --json status` o un `probe` grezzo no.
 
 Segnala le vulnerabilità in privato tramite un [avviso di sicurezza su GitHub](https://github.com/lowsbarrel/epcube-ha/security/advisories/new) invece che con una issue pubblica.
 

@@ -8,7 +8,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from epcube_api import WorkMode
+from epcube_api import ModeConfig, WorkMode
 
 from .const import DOMAIN
 from .coordinator import EpCubeConfigEntry, EpCubeCoordinator
@@ -49,15 +49,15 @@ class EpCubeModeSelect(EpCubeEntity, SelectEntity):
 
     @override
     async def async_select_option(self, option: str) -> None:
-        config = self.snapshot.mode
-        if config is None:
-            raise HomeAssistantError(
-                translation_domain=DOMAIN, translation_key="config_unavailable"
-            )
-
         mode = OPTIONS[option]
-        # Time-of-use with no tariff windows leaves an empty calendar; refuse the state.
-        if mode is WorkMode.TIME_OF_USE and not config.has_tou_schedule:
-            raise HomeAssistantError(translation_domain=DOMAIN, translation_key="no_tou_schedule")
+        device = self.coordinator.client.device
 
-        await self.coordinator.async_apply(self.coordinator.client.device.set_mode(config, mode))
+        async def write(config: ModeConfig) -> None:
+            # Time-of-use with no tariff windows leaves an empty calendar; refuse the state.
+            if mode is WorkMode.TIME_OF_USE and not config.has_tou_schedule:
+                raise HomeAssistantError(
+                    translation_domain=DOMAIN, translation_key="no_tou_schedule"
+                )
+            await device.set_mode(config, mode)
+
+        await self.coordinator.async_write(write)

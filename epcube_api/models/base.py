@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import IntEnum
-from typing import Annotated, Any, override
+from typing import Annotated, Any
 
 from pydantic import BaseModel, BeforeValidator, ConfigDict
 from pydantic.alias_generators import to_camel
@@ -132,9 +132,3 @@ class EpCubeModel(BaseModel):
 
     def api_dump(self) -> dict[str, Any]:
         return self.model_dump(by_alias=True, exclude_none=True)
-
-
-class EpCubeRequest(EpCubeModel):
-    @override
-    def api_dump(self) -> dict[str, Any]:
-        return self.model_dump(by_alias=True, exclude_none=False)

@@ -50,14 +50,6 @@ def test_redact_never_reveals_the_token():
     assert "40 chars" in masked
 
 
-def test_request_with_params_merges_without_mutating():
-    original = Request("GET", "device/x", params={"a": 1})
-    derived = original.with_params(b=2)
-    assert original.params == {"a": 1}
-    assert derived.params == {"a": 1, "b": 2}
-    assert derived.path == "device/x"
-
-
 def test_call_record_ok_reflects_the_error():
     assert CallRecord("GET", "p", 200, 200, 0.1, 1).ok
     assert not CallRecord("GET", "p", 500, None, 0.1, 1, "boom").ok
@@ -149,7 +141,7 @@ async def test_a_rate_limit_is_retried_then_raised():
         return httpx.Response(429, json={"message": "slow down"})
 
     with pytest.raises(EpCubeRateLimitError):
-        await transport(handler, max_retries=3).request(Request("GET", "device/x"))
+        await transport(handler, max_attempts=3).request(Request("GET", "device/x"))
     assert calls["n"] == 3
 
 
@@ -162,7 +154,7 @@ async def test_a_server_error_that_recovers_is_not_raised():
             return httpx.Response(500, json={"message": "boom"})
         return httpx.Response(200, json={"status": 200, "data": {"recovered": True}})
 
-    result = await transport(handler, max_retries=3).request(Request("GET", "device/x"))
+    result = await transport(handler, max_attempts=3).request(Request("GET", "device/x"))
     assert result == {"recovered": True}
     assert calls["n"] == 2
 
@@ -175,7 +167,7 @@ async def test_a_timeout_is_retried_and_reported_as_a_timeout():
         raise httpx.ReadTimeout("too slow", request=request)
 
     with pytest.raises(EpCubeTimeoutError, match="timed out"):
-        await transport(handler, max_retries=2).request(Request("GET", "device/x"))
+        await transport(handler, max_attempts=2).request(Request("GET", "device/x"))
     assert calls["n"] == 2
 
 
@@ -184,7 +176,7 @@ async def test_a_connection_error_is_retried():
         raise httpx.ConnectError("refused", request=request)
 
     with pytest.raises(EpCubeConnectionError):
-        await transport(handler, max_retries=2).request(Request("GET", "device/x"))
+        await transport(handler, max_attempts=2).request(Request("GET", "device/x"))
 
 
 async def test_a_response_error_is_not_retried():
@@ -196,7 +188,7 @@ async def test_a_response_error_is_not_retried():
         return httpx.Response(200, text="not json")
 
     with pytest.raises(EpCubeResponseError):
-        await transport(handler, max_retries=3).request(Request("GET", "device/x"))
+        await transport(handler, max_attempts=3).request(Request("GET", "device/x"))
     assert calls["n"] == 1
 
 
@@ -205,7 +197,7 @@ async def test_a_body_level_500_is_a_server_error():
         return httpx.Response(200, json={"status": 500, "message": "Eccezione del server."})
 
     with pytest.raises(EpCubeServerError):
-        await transport(handler, max_retries=1).request(Request("GET", "device/x"))
+        await transport(handler, max_attempts=1).request(Request("GET", "device/x"))
 
 
 async def test_history_records_success_and_failure():
@@ -217,7 +209,7 @@ async def test_history_records_success_and_failure():
             return httpx.Response(200, json={"status": 200, "data": {}})
         return httpx.Response(404, json={"message": "gone"})
 
-    tr = transport(handler, max_retries=1)
+    tr = transport(handler, max_attempts=1)
     await tr.request(Request("GET", "device/ok"))
     with pytest.raises(EpCubeError):
         await tr.request(Request("GET", "device/missing"))

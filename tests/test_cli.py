@@ -136,7 +136,7 @@ def test_status_reports_degraded_sections(
 
     def factory(**kwargs: Any):
         kwargs["http_client"] = httpx.AsyncClient(transport=httpx.MockTransport(recorder.handler))
-        kwargs["max_retries"] = 1
+        kwargs["max_attempts"] = 1
         return EpCubeAsyncClient(**kwargs)
 
     monkeypatch.setattr(cli, "EpCubeAsyncClient", factory)
@@ -293,9 +293,22 @@ def test_no_command_is_a_usage_error():
         cli.main([])
 
 
-def test_module_entry_point_is_wired():
-    assert callable(cli.main)
-    assert cli.build_parser().prog == "epcube"
+def test_a_bad_region_becomes_exit_1(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+):
+    monkeypatch.setenv("EPCUBE_REGION", "MARS")
+    assert run("--token", "t", "status") == 1
+    assert "unknown region" in capsys.readouterr().out
+
+
+def test_a_malformed_param_becomes_exit_1(capsys: pytest.CaptureFixture[str]):
+    assert run("--token", "t", "probe", "device/x", "--param", "devId") == 1
+    assert "error:" in capsys.readouterr().out
+
+
+def test_a_bad_date_is_a_usage_error():
+    with pytest.raises(SystemExit):
+        run("--token", "t", "series", "--date", "2026-13-01")
 
 
 def test_status_with_every_optional_section_missing(
@@ -318,7 +331,7 @@ def test_status_with_every_optional_section_missing(
 
     def factory(**kwargs: Any):
         kwargs["http_client"] = httpx.AsyncClient(transport=httpx.MockTransport(recorder.handler))
-        kwargs["max_retries"] = 1
+        kwargs["max_attempts"] = 1
         return EpCubeAsyncClient(**kwargs)
 
     monkeypatch.setattr(cli, "EpCubeAsyncClient", factory)

@@ -16,8 +16,7 @@ Cube API, and a Home Assistant integration that knows nothing else.
 │   └── endpoints/             one module per area of the API
 ├── custom_components/epcube/  the Home Assistant integration
 ├── scripts/                   verify.sh (the 'done' bar), check-invariants.py, release bundling
-├── tests/                     offline suite over httpx.MockTransport
-└── tools/                     how the route list was recovered from the APK
+└── tests/                     offline suite over httpx.MockTransport
 ```
 
 ## Why the client is async-only
@@ -77,8 +76,12 @@ writes the calendar and switches mode in one payload; without `apply` it only
 saves the calendar. A window list left as `None` keeps its current value; an
 empty list clears it deliberately.
 
-`evChargerReserveSoc` is the one field dropped when unset: the endpoint accepts
-it only in time-of-use mode.
+`evChargerReserveSoc` is carried from the read when the target mode is
+time-of-use, and dropped otherwise.
+
+Home Assistant writes go through one locked `EpCubeCoordinator.async_write(...)`,
+which reads the mode fresh and holds the lock across the read, write and refresh,
+so two services cannot interleave on the same device.
 
 ## The integration
 
@@ -135,6 +138,6 @@ accessors such as `battery_power_w`.
 ## Where the route list came from
 
 The app stores its Retrofit routes as plain strings in the APK's dex string
-tables, so `tools/extract_apk_endpoints.py` reads all 118 of them without a
-decompiler. `registry.py` records each one and whether it has a wrapper;
+tables, so all 118 of them were recovered without a decompiler. `registry.py`
+records each one and whether it has a wrapper;
 [api-endpoints.md](api-endpoints.md) is the prose version.

@@ -1,14 +1,15 @@
 from __future__ import annotations
 
+import asyncio
 import logging
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Callable
 from datetime import timedelta
 from time import monotonic
 from typing import Any, override
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers.httpx_client import get_async_client
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
@@ -16,6 +17,7 @@ from epcube_api import (
     EpCubeAsyncClient,
     EpCubeAuthError,
     EpCubeError,
+    ModeConfig,
     Region,
     Snapshot,
 )
@@ -75,6 +77,7 @@ class EpCubeCoordinator(DataUpdateCoordinator[Snapshot]):
         )
 
         self.overrides = OverrideManager(hass, self, entry.entry_id)
+        self._write_lock = asyncio.Lock()
         # The API's battery energy counters read zero, so derive from the stored-energy level.
         self.battery_energy = BatteryEnergyAccumulator()
 
@@ -124,13 +127,15 @@ class EpCubeCoordinator(DataUpdateCoordinator[Snapshot]):
     def device_id(self) -> str:
         return self.data.dev_id
 
-    async def async_apply(self, coro: Awaitable[object]) -> None:
-        try:
-            await coro
-        except EpCubeAuthError as err:
-            raise ConfigEntryAuthFailed(
-                translation_domain=DOMAIN, translation_key="token_expired"
-            ) from err
-        except EpCubeError as err:
-            raise UpdateFailed(str(err)) from err
-        await self.async_request_refresh()
+    async def async_write(self, write: Callable[[ModeConfig], Awaitable[object]]) -> None:
+        async with self._write_lock:
+            try:
+                config = await self.client.device.mode(self.device_id)
+                await write(config)
+            except EpCubeAuthError as err:
+                raise ConfigEntryAuthFailed(
+                    translation_domain=DOMAIN, translation_key="token_expired"
+                ) from err
+            except EpCubeError as err:
+                raise HomeAssistantError(str(err)) from err
+            await self.async_refresh()

@@ -262,7 +262,9 @@ async def test_snapshot_without_optional_sections(client: EpCubeAsyncClient):
 async def test_snapshot_records_a_failing_device_list(recorder: Recorder):
     recorder.overrides["device/deviceList"] = httpx.Response(500, json={"message": "no"})
     http = httpx.AsyncClient(transport=httpx.MockTransport(recorder.handler))
-    async with EpCubeAsyncClient(region="EU", token="t", http_client=http, max_retries=1) as client:
+    async with EpCubeAsyncClient(
+        region="EU", token="t", http_client=http, max_attempts=1
+    ) as client:
         snap = await client.snapshot(SN)
     assert "summary" in snap.errors
     assert snap.summary is None

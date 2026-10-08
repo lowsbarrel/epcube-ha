@@ -5,7 +5,7 @@ from typing import Any
 from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.core import HomeAssistant
 
-from .const import CONF_SN, CONF_TOKEN
+from .const import CONF_DEVICE_ID, CONF_SN, CONF_TOKEN
 from .coordinator import EpCubeConfigEntry
 
 # The API returns owner PII; redact it so a downloaded file is safe to attach to a report.
@@ -45,7 +45,8 @@ async def async_get_config_entry_diagnostics(
     snapshot = coordinator.data
     return {
         "entry": async_redact_data(
-            {**entry.data, "options": dict(entry.options)}, {CONF_TOKEN, CONF_SN}
+            {**entry.data, "options": dict(entry.options)},
+            {CONF_TOKEN, CONF_SN, CONF_DEVICE_ID},
         ),
         "region": coordinator.client.region.value,
         "degraded_sections": snapshot.errors,

@@ -1,18 +1,17 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Awaitable
 from datetime import timedelta
 from typing import Any
 
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant, ServiceCall, callback
-from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 
-from epcube_api import EpCubeError, TouWindow, WorkMode
+from epcube_api import ModeConfig, TouWindow, WorkMode
 
 from .const import DOMAIN
 from .coordinator import EpCubeCoordinator
@@ -53,10 +52,12 @@ _TARGET = {vol.Required(ATTR_DEVICE_ID): cv.string}
 
 SOC = vol.All(vol.Coerce(int), vol.Range(min=0, max=100))
 
+DURATION = vol.All(cv.time_period, vol.Range(min=timedelta(minutes=1)))
+
 SCHEMA_TOU = vol.Schema(
     {
         **_TARGET,
-        **{vol.Optional(key): vol.Any(cv.ensure_list, None) for key in WINDOW_KEYS},
+        **{vol.Optional(key): vol.Any(None, cv.ensure_list) for key in WINDOW_KEYS},
         vol.Optional(ATTR_APPLY, default=False): cv.boolean,
     }
 )
@@ -66,22 +67,14 @@ SCHEMA_MODE = vol.Schema(
 )
 
 SCHEMA_CHARGE = vol.Schema(
-    {
-        **_TARGET,
-        vol.Required(ATTR_TARGET_SOC): SOC,
-        vol.Optional(ATTR_DURATION): cv.positive_time_period,
-    }
+    {**_TARGET, vol.Required(ATTR_TARGET_SOC): SOC, vol.Optional(ATTR_DURATION): DURATION}
 )
 
 SCHEMA_DISCHARGE = vol.Schema(
-    {
-        **_TARGET,
-        vol.Required(ATTR_TARGET_SOC): SOC,
-        vol.Optional(ATTR_DURATION): cv.positive_time_period,
-    }
+    {**_TARGET, vol.Required(ATTR_TARGET_SOC): SOC, vol.Optional(ATTR_DURATION): DURATION}
 )
 
-SCHEMA_HOLD = vol.Schema({**_TARGET, vol.Optional(ATTR_DURATION): cv.positive_time_period})
+SCHEMA_HOLD = vol.Schema({**_TARGET, vol.Optional(ATTR_DURATION): DURATION})
 
 SCHEMA_CLEAR = vol.Schema(_TARGET)
 
@@ -115,41 +108,34 @@ def _windows(call: ServiceCall, key: str) -> list[str] | None:
 
     windows: list[str] = []
     for item in raw:
+        text: str | None
         if isinstance(item, str):
-            if TouWindow.parse(item) is None:
-                raise ServiceValidationError(
-                    translation_domain=DOMAIN,
-                    translation_key="bad_tou_window",
-                    translation_placeholders={"window": item, "field": key},
-                )
-            windows.append(item)
-            continue
-        if isinstance(item, dict) and "start" in item and "end" in item:
+            text = item
+        elif isinstance(item, dict) and "start" in item and "end" in item:
             price = item.get("price")
-            window = TouWindow(
-                start=str(item["start"]),
-                end=str(item["end"]),
-                price=float(price) if price is not None else None,
+            try:
+                text = TouWindow(
+                    start=str(item["start"]),
+                    end=str(item["end"]),
+                    price=float(price) if price is not None else None,
+                ).to_api()
+            except TypeError, ValueError:
+                text = None
+        else:
+            text = None
+
+        if text is None or TouWindow.parse(text) is None:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="bad_tou_window",
+                translation_placeholders={"window": str(item), "field": key},
             )
-            windows.append(window.to_api())
-            continue
-        raise ServiceValidationError(
-            translation_domain=DOMAIN,
-            translation_key="bad_tou_window",
-            translation_placeholders={"window": str(item), "field": key},
-        )
+        windows.append(text)
     return windows
 
 
 def _duration(call: ServiceCall) -> timedelta | None:
     return call.data.get(ATTR_DURATION)
-
-
-async def _guarded(coro: Awaitable[object]) -> None:
-    try:
-        await coro
-    except EpCubeError as err:
-        raise HomeAssistantError(str(err)) from err
 
 
 @callback
@@ -159,42 +145,33 @@ def async_register_services(hass: HomeAssistant) -> None:
 
     async def set_tou_schedule(call: ServiceCall) -> None:
         coordinator = _coordinator(hass, call)
-        config = coordinator.data.mode
-        if config is None:
-            raise HomeAssistantError(
-                translation_domain=DOMAIN, translation_key="config_unavailable"
-            )
         windows: dict[str, Any] = {key: _windows(call, key) for key in WINDOW_KEYS}
-        await _guarded(
-            coordinator.client.device.set_tou_schedule(
-                config, apply=call.data[ATTR_APPLY], **windows
-            )
+        apply = call.data[ATTR_APPLY]
+        device = coordinator.client.device
+        await coordinator.async_write(
+            lambda config: device.set_tou_schedule(config, apply=apply, **windows)
         )
-        await coordinator.async_request_refresh()
 
     async def set_operating_mode(call: ServiceCall) -> None:
         coordinator = _coordinator(hass, call)
-        config = coordinator.data.mode
-        if config is None:
-            raise HomeAssistantError(
-                translation_domain=DOMAIN, translation_key="config_unavailable"
-            )
-
         mode = MODES[call.data[ATTR_MODE]]
-        if mode is WorkMode.TIME_OF_USE and not config.has_tou_schedule:
-            raise ServiceValidationError(
-                translation_domain=DOMAIN, translation_key="no_tou_schedule"
-            )
-
         reserve = call.data.get(ATTR_RESERVE_SOC)
-        if reserve is not None:
-            # Reserve first, so the mode change lands on the intended floor.
-            field = "backup" if mode is WorkMode.BACKUP else "self_consumption"
-            await _guarded(coordinator.client.device.set_reserve_soc(config, **{field: reserve}))
-            config = await coordinator.client.device.mode(coordinator.device_id)
+        device = coordinator.client.device
 
-        await _guarded(coordinator.client.device.set_mode(config, mode))
-        await coordinator.async_request_refresh()
+        async def write(config: ModeConfig) -> None:
+            if mode is WorkMode.TIME_OF_USE and not config.has_tou_schedule:
+                raise ServiceValidationError(
+                    translation_domain=DOMAIN, translation_key="no_tou_schedule"
+                )
+            if reserve is not None:
+                # Reserve first, so the mode change lands on the intended floor.
+                field = "backup" if mode is WorkMode.BACKUP else "self_consumption"
+                await device.set_reserve_soc(config, **{field: reserve})
+                # set_mode carries the reserve, so rebuild it from the updated state.
+                config = await device.mode(coordinator.device_id)
+            await device.set_mode(config, mode)
+
+        await coordinator.async_write(write)
 
     async def force_charge(call: ServiceCall) -> None:
         coordinator = _coordinator(hass, call)

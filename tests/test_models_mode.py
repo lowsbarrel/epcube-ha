@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import pytest
+
 from epcube_api import ModeConfig, SwitchModeRequest, TouWindow, WorkMode
 from epcube_api.const import DayType
-from epcube_api.models.mode import ReserveLevels
 
 
 def test_tou_window_parsing_round_trips():
@@ -19,11 +20,36 @@ def test_tou_window_parsing_round_trips():
 
 
 def test_malformed_tou_windows_are_dropped_not_raised():
-    assert TouWindow.parse("nonsense") is None
     assert TouWindow.parse_list(["08:00_12:00_0.1", "bad", ""]) == [
         TouWindow(start="08:00", end="12:00", price=0.1)
     ]
     assert TouWindow.parse_list(None) == []
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        "nonsense",
+        "08:00_12:00_-",
+        "08:00_12:00_1.2.3",
+        "99:99_25:00",
+        "25:00_08:00",
+        "08:60_12:00",
+        "08:00_12:00_+",
+    ],
+)
+def test_malformed_tou_windows_parse_to_none(raw: str):
+    assert TouWindow.parse(raw) is None
+
+
+@pytest.mark.parametrize(
+    ("raw", "price"),
+    [("24:00_08:00_0.5", 0.5), ("08:00_12:00", None), ("08:00_12:00_-1.5", -1.5)],
+)
+def test_valid_tou_windows_parse(raw: str, price: float | None):
+    window = TouWindow.parse(raw)
+    assert window is not None
+    assert window.price == price
 
 
 def test_mode_config_derived_properties():
@@ -54,19 +80,25 @@ def test_mode_config_empty_is_inert():
     assert not config.has_tou_schedule
 
 
-def test_reserve_levels_from_config():
-    levels = ReserveLevels.from_config(
-        ModeConfig.model_validate(
-            {
-                "selfConsumptioinReserveSoc": "15",
-                "backupPowerReserveSoc": "100",
-                "evChargerReserveSoc": 50,
-                "chargingLimitSoc": 90,
-            }
-        )
-    )
-    assert (levels.self_consumption, levels.backup) == (15.0, 100.0)
-    assert (levels.ev_charger, levels.charging_limit) == (50.0, 90.0)
+def test_weather_watch_survives_a_write():
+    config = ModeConfig.model_validate({"devId": "1", "weatherWatch": "1"})
+    assert SwitchModeRequest.from_config(config).api_dump()["weatherWatch"] == "1"
+
+
+def test_ev_reserve_is_carried_in_time_of_use_mode():
+    config = ModeConfig.model_validate({"devId": "1", "workStatus": "2", "evChargerReserveSoc": 50})
+    assert SwitchModeRequest.from_config(config).api_dump()["evChargerReserveSoc"] == 50
+
+
+def test_ev_reserve_is_dropped_outside_time_of_use_mode():
+    config = ModeConfig.model_validate({"devId": "1", "workStatus": "1", "evChargerReserveSoc": 50})
+    assert "evChargerReserveSoc" not in SwitchModeRequest.from_config(config).api_dump()
+
+
+def test_with_changes_validates_the_result():
+    request = SwitchModeRequest.from_config(ModeConfig.model_validate({"devId": "1"}))
+    with pytest.raises(ValueError):
+        request.with_changes(active_week=[1, 2])
 
 
 def test_from_config_defaults_when_the_device_reports_nothing():

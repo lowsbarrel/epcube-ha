@@ -136,6 +136,6 @@ The CLI resolves each setting from its flag first (`--region`, `--token`, `--sn`
 `--email`, `--password`), then the environment, then `.env`.
 
 Be aware that the API returns the owner's name, postal address, GPS coordinates
-and email on several endpoints. `epcube status --json` and a raw `probe` will
+and email on several endpoints. `epcube --json status` and a raw `probe` will
 show all of it. The integration's diagnostics download redacts it, but a
 hand-made dump does not.

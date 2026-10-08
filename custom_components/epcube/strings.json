@@ -68,9 +68,6 @@
     "token_expired": {
       "message": "The EP Cube access token is no longer valid."
     },
-    "config_unavailable": {
-      "message": "The current device configuration could not be read, so it cannot be changed safely."
-    },
     "no_tou_schedule": {
       "message": "No time-of-use periods are configured. Switching to that mode now would leave the battery on an empty tariff calendar."
     },

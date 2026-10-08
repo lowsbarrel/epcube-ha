@@ -40,7 +40,7 @@ Table of Contents:
 
 - **Controls** - Operating mode (self-consumption, time of use, backup), self-consumption and backup reserve levels, and charge from grid. Every write carries the complete device configuration, so changing one setting never resets another.
 
-- **Battery overrides** - Force charge, force discharge or hold the battery for a set duration; the previous reserve is restored afterwards, even across a restart.
+- **Battery overrides** - Force charge, force discharge or hold the battery for a set duration; the previous self-consumption reserve is restored afterwards, even across a restart, and a failed restore is retried.
 
 - **Health** - Online, fault, alert and grid outage indicators, outage count and last outage, last connection, Wi-Fi network and signal level.
 
@@ -92,7 +92,7 @@ The API leaves its battery energy counters at zero, so **Battery charged** and *
 |`epcube.force_charge`|Charges to a target level by raising the reserve, for a duration|
 |`epcube.force_discharge`|Lets the battery supply the house down to a target level|
 |`epcube.hold_battery`|Holds the battery at its current level|
-|`epcube.clear_override`|Ends any override and restores the previous settings|
+|`epcube.clear_override`|Ends any override and restores the previous self-consumption reserve|
 
 ### The client and CLI
 
@@ -193,7 +193,7 @@ Contributions are welcome, and extending the API coverage saves the next person 
 
 - The integration talks only to the EP Cube cloud for your region; there is no other server and no telemetry.
 - The access token lives in Home Assistant's config entry; the CLI reads it from your environment or a gitignored `.env`.
-- The API returns the owner's name, address, GPS coordinates and email on several endpoints. The diagnostics download redacts them; a raw `epcube status --json` or `probe` does not.
+- The API returns the owner's name, address, GPS coordinates and email on several endpoints. The diagnostics download redacts them; a raw `epcube --json status` or `probe` does not.
 
 Please report vulnerabilities privately through a [GitHub security advisory](https://github.com/lowsbarrel/epcube-ha/security/advisories/new) rather than a public issue.
 

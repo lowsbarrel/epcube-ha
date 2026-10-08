@@ -185,10 +185,6 @@ def by_group() -> dict[str, list[Route]]:
     return groups
 
 
-def find(path: str) -> Route | None:
-    return next((r for r in ROUTES if r.path == path), None)
-
-
 def coverage() -> dict[str, int]:
     return {
         "total": len(ROUTES),

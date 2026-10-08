@@ -12,7 +12,7 @@ from .const import (
     DEFAULT_BACKOFF,
     DEFAULT_CONNECT_TIMEOUT,
     DEFAULT_LANGUAGE,
-    DEFAULT_MAX_RETRIES,
+    DEFAULT_MAX_ATTEMPTS,
     DEFAULT_TIMEOUT,
     RATE_LIMIT_BACKOFF_MULTIPLIER,
     USER_AGENT,
@@ -57,10 +57,6 @@ class Request:
     json: dict[str, Any] | None = None
     auth: bool = True
 
-    def with_params(self, **extra: Any) -> Request:
-        merged = {**(self.params or {}), **extra}
-        return Request(self.method, self.path, merged, self.json, self.auth)
-
 
 @dataclass(slots=True)
 class CallRecord:
@@ -83,7 +79,7 @@ class TransportConfig:
     token: str | None = None
     timeout: float = DEFAULT_TIMEOUT
     connect_timeout: float = DEFAULT_CONNECT_TIMEOUT
-    max_retries: int = DEFAULT_MAX_RETRIES
+    max_attempts: int = DEFAULT_MAX_ATTEMPTS
     backoff: float = DEFAULT_BACKOFF
     language: str = DEFAULT_LANGUAGE
     user_agent: str = USER_AGENT
@@ -91,10 +87,16 @@ class TransportConfig:
     history_limit: int = 200
 
 
-class BaseTransport:
-    def __init__(self, config: TransportConfig) -> None:
+class AsyncTransport:
+    def __init__(
+        self,
+        config: TransportConfig,
+        client: httpx.AsyncClient | None = None,
+    ) -> None:
         self.config = config
         self.config.token = normalize_token(config.token)
+        self._client = client
+        self._owns_client = client is None
 
     @property
     def region(self) -> Region:
@@ -209,7 +211,7 @@ class BaseTransport:
         return kind(text, http_status=http_status, api_status=api_status, path=path)
 
     def _retry_delay(self, attempt: int, error: Exception) -> float | None:
-        if attempt >= self.config.max_retries:
+        if attempt >= self.config.max_attempts:
             return None
         if isinstance(error, EpCubeRateLimitError):
             return self.config.backoff * RATE_LIMIT_BACKOFF_MULTIPLIER * attempt
@@ -231,17 +233,6 @@ class BaseTransport:
 
     def _timeout(self) -> httpx.Timeout:
         return httpx.Timeout(self.config.timeout, connect=self.config.connect_timeout)
-
-
-class AsyncTransport(BaseTransport):
-    def __init__(
-        self,
-        config: TransportConfig,
-        client: httpx.AsyncClient | None = None,
-    ) -> None:
-        super().__init__(config)
-        self._client = client
-        self._owns_client = client is None
 
     @property
     def client(self) -> httpx.AsyncClient:
@@ -269,7 +260,7 @@ class AsyncTransport(BaseTransport):
                 )
                 http_status = response.status_code
                 data, api_status = self._process(response, request)
-            except (httpx.TransportError, httpx.HTTPError) as exc:
+            except httpx.HTTPError as exc:
                 last_error = self._wrap_transport_error(exc, request.path)
             except EpCubeAPIError as exc:
                 last_error = exc
@@ -309,7 +300,7 @@ class AsyncTransport(BaseTransport):
                 request.path,
                 delay,
                 attempt,
-                self.config.max_retries,
+                self.config.max_attempts,
                 last_error,
             )
             await asyncio.sleep(delay)

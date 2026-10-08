@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Self, override
+from typing import Any, Self
 
 from pydantic import Field
 
 from ..const import DEFAULT_NON_WORKDAYS, DEFAULT_WORKDAYS, WorkMode
-from .base import EpCubeRequest, to_int_enum
+from .base import EpCubeModel, to_int_enum
 from .mode import ModeConfig, TouWindow
 
 
@@ -15,7 +15,7 @@ def _windows_to_api(windows: list[TouWindow] | list[str] | None) -> list[str]:
     return [w.to_api() if isinstance(w, TouWindow) else w for w in windows]
 
 
-class SwitchModeRequest(EpCubeRequest):
+class SwitchModeRequest(EpCubeModel):
     dev_id: str = Field(alias="devId")
     work_status: str = Field(alias="workStatus")
 
@@ -85,10 +85,12 @@ class SwitchModeRequest(EpCubeRequest):
         mode = work_status if work_status is not None else config.work_status
         if isinstance(mode, WorkMode):
             mode = mode.value
+        target_mode = to_int_enum(WorkMode, mode)
 
         return cls(
             devId=resolved_id,
             workStatus=str(mode if mode is not None else WorkMode.SELF_CONSUMPTION.value),
+            weatherWatch=config.weather_watch or "0",
             onlySave="1" if only_save else "0",
             touType=config.tou_type if config.tou_type is not None else 0,
             peakTimeList=list(config.peak_time_list),
@@ -124,10 +126,13 @@ class SwitchModeRequest(EpCubeRequest):
                 if config.allow_charging_from_grid is not None
                 else 1
             ),
+            evChargerReserveSoc=(
+                config.ev_charger_reserve_soc if target_mode is WorkMode.TIME_OF_USE else None
+            ),
         )
 
     def with_changes(self, **changes: Any) -> Self:
-        return self.model_copy(update=self._normalise(changes))
+        return self.model_validate(self.model_dump() | self._normalise(changes))
 
     def _normalise(self, changes: dict[str, Any]) -> dict[str, Any]:
         by_alias = {
@@ -167,10 +172,3 @@ class SwitchModeRequest(EpCubeRequest):
     @property
     def mode(self) -> WorkMode | None:
         return to_int_enum(WorkMode, self.work_status)
-
-    @override
-    def api_dump(self) -> dict[str, Any]:
-        payload = super().api_dump()
-        if payload.get("evChargerReserveSoc") is None:
-            payload.pop("evChargerReserveSoc", None)
-        return payload

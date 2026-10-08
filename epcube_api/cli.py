@@ -6,7 +6,7 @@ import inspect
 import json
 import os
 import sys
-from datetime import date, datetime
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -126,7 +126,7 @@ async def cmd_series(args: argparse.Namespace, env: dict[str, str]) -> int:
     async with build_client(args, env) as client:
         _, dev_id, _ = await client.resolve_device(setting("EPCUBE_SN", args.sn, env) or None)
         scope = Scope[args.scope.upper()]
-        when = datetime.strptime(args.date, "%Y-%m-%d").date() if args.date else date.today()
+        when = args.date or date.today()
         series = await client.data.series(dev_id, scope, when)
 
         if args.json:
@@ -243,7 +243,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     series = sub.add_parser("series", help="energy curve over a window")
     series.add_argument("--scope", default="day", choices=[s.name.lower() for s in Scope])
-    series.add_argument("--date", help="YYYY-MM-DD; defaults to today")
+    series.add_argument("--date", type=date.fromisoformat, help="YYYY-MM-DD; defaults to today")
     series.add_argument(
         "--field", default="battery_power_w", help="reading to plot (default: battery_power_w)"
     )
@@ -287,7 +287,7 @@ def main(argv: list[str] | None = None) -> int:
         if inspect.iscoroutinefunction(args.func):
             return asyncio.run(args.func(args, env))
         return args.func(args, env)
-    except EpCubeError as exc:
+    except (EpCubeError, ValueError) as exc:
         print(f"\nerror: {exc}\n")
         return 1
     except KeyboardInterrupt:

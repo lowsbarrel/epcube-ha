@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 
 class EpCubeError(Exception):
     pass
@@ -23,12 +21,10 @@ class EpCubeAPIError(EpCubeError):
         http_status: int | None = None,
         api_status: int | None = None,
         path: str | None = None,
-        payload: Any = None,
     ) -> None:
         self.http_status = http_status
         self.api_status = api_status
         self.path = path
-        self.payload = payload
         detail = []
         if path:
             detail.append(path)
@@ -61,9 +57,8 @@ class EpCubeNotFoundError(EpCubeAPIError):
 
 
 class EpCubeResponseError(EpCubeError):
-    def __init__(self, message: str, *, path: str | None = None, payload: Any = None) -> None:
+    def __init__(self, message: str, *, path: str | None = None) -> None:
         self.path = path
-        self.payload = payload
         super().__init__(f"{path}: {message}" if path else message)
 
 
