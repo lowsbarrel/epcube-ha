@@ -8,7 +8,7 @@ and a change that alters behaviour updates its doc in the same commit.
 | --- | --- |
 | [setup.md](setup.md) | Installing the integration, configuring it, and setting up for development |
 | [architecture.md](architecture.md) | The two layers, why the client is async-only, the write path, sign conventions |
-| [api-endpoints.md](api-endpoints.md) | All 118 routes recovered from the app, what's verified, how to explore the rest |
+| [api-endpoints.md](api-endpoints.md) | All 125 routes recovered from the app, what's verified, how to explore the rest |
 | [testing.md](testing.md) | The verification bar, what the offline suite protects, testing against real hardware |
 | [deploy.md](deploy.md) | Trunk-based branching, CI, cutting a release, the HACS bundle |
 

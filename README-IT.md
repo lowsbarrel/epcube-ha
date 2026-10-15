@@ -46,7 +46,7 @@ Indice:
 
 - **Diagnostica** - Un download oscurato con le ultime 25 chiamate all'API e le sezioni degradate.
 
-- **Un client completo** - `epcube_api` copre **118 route** recuperate dall'app Android, con modelli pydantic da un capo all'altro e una riga di comando `epcube` per stato, serie, fotovoltaico per stringa e chiamate grezze.
+- **Un client completo** - `epcube_api` copre **125 route** recuperate dall'app Android, con modelli pydantic da un capo all'altro e una riga di comando `epcube` per stato, serie, fotovoltaico per stringa e chiamate grezze.
 
 ## Installazione
 

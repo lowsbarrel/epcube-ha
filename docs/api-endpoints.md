@@ -1,12 +1,13 @@
 # EP Cube API endpoint inventory
 
-Extracted from the official Android app, `com.eternalplanetenergy.epcube` 2.5.1.
+Extracted from the official Android app, `com.eternalplanetenergy.epcube` 2.5.1. The `dynamicPrice/`
+routes and the EU probe results below come from the EU build, `com.eternalplanetenergy.epcube.eu` 3.2.0.
 Routes are stored Retrofit-style (no leading slash); prefix them with the
 regional base URL plus `/`, e.g.
 `https://monitoring-eu.epcube.com/api/device/queryDataGraphV2`. `epcube_api/registry.py`
 is the record, and `uv run epcube routes` prints it.
 
-**118 routes exist. The Home Assistant integration uses 10.**
+**125 routes exist. The Home Assistant integration uses 10.**
 
 Legend: **[HA]** used by the integration · **[✓]** verified working against a
 real account · **[?]** present in the app, not yet tested.
@@ -37,6 +38,35 @@ mask the arithmetic noise. This endpoint gives it directly.
 Also per point: grid import/export, solar (AC/DC split), battery charge/discharge
 energy, backup and non-backup loads, EV, generator, and the flow-direction fields.
 
+### `dynamicPrice/*` **[✓]**: the saved tariff, and the prices the cube uses in Dynamic mode
+
+Seven routes the 2.5.1 inventory did not have. Checked against a real EU account
+(app 3.2.0, the web portal's `/v1/api/` prefix serves the five read routes too).
+All are plain bearer-token calls on the usual `/api/` prefix.
+
+| Route | Method | Notes |
+|---|---|---|
+| `dynamicPrice/getRelation` | GET `devId` | The saved choice: `supportCountryId`/`supportCountryName`, `regionCode`/`regionName`, `productBrand`, `brandId`, `productCode` (import), `productCodeOut` (export), `productName`/`productOutName`, `unitDefault`/`unitSmallest`/`unitMulti` |
+| `dynamicPrice/getCountry` | GET `devId` | Countries with Dynamic tariff support; `currentCountry` marks the account's |
+| `dynamicPrice/getRegionList` | GET `devId`, `supportCountryId` | Regions of a country (`regionCode`, `regionName`) |
+| `dynamicPrice/getBrands` | GET `devId`, `supportCountryId`, `regionCode` | Suppliers in a region |
+| `dynamicPrice/getProducts` | GET `devId`, `brandName`, `region`, `productType` | `productType` 0 is import, 1 is export. The app declares `brandId` / `regionCode` for the same call |
+| `dynamicPrice/calcuPrice` | GET `devId`, optional `checkTime` | Half-hourly prices: `prices` (import) and `pricesExport`, each `{priceInc, priceExc, startTime, endTime}` in pence, local time. `checkTime` must be a plain `YYYY-MM-DD` (anything else is a 500); a day that is not published yet returns no price lists |
+| `dynamicPrice/saveBinding` | POST JSON | Saves the tariff. Body: `devId`, `brandId`, `productBrand`, `supportCountryId`, `productCode`, `productCodeOut`, `regionCode`, `ratio.fraunhofer.{standardImportRatio, importServiceCharge, standardExportRatio, exportServiceCharge}`. `getRelation` follows within about a minute. Returns `data: null` |
+
+What does **not** save the tariff, tested so nobody has to:
+
+- the web portal's `POST /v1/api/home/setDynamicPrice` answers `status: 500`;
+- `POST device/switchMode` accepts a `dynamicPriceBinding` block (HTTP 200) and ignores it;
+- guessed names (`device/setDynamicPrice`, `device/saveDynamicPrice`, `dynamicPrice/setRelation`, `dynamicPrice/save`, ...) are all 404.
+
+The choices on offer are decided by the vendor, per region. For a UK account the
+picker offers Octopus Energy only, with the Agile Octopus versions for import and
+Agile Outgoing or the flat Outgoing Octopus for export.
+
+The app's help text says that with no valid price data the system runs in
+self-consumption mode (`DynamicPriceBean.noPrice`).
+
 ### `device/getSolarPvPower` **[✓]**: per-string PV telemetry
 
 Voltage, current and power for **PV1 to PV4 individually**. Nothing else in the API
@@ -66,7 +96,7 @@ checkFirmarkVersion           getDebugConfig                queryDataGraph      
 checkSn                       getDevPcsVersion              queryDataGraphV2      [✓]
 checkUpgrade                  getDevPowerCutLog     [✓]     refreshData          [405]
 checkUpgradeResult            getDeviceBoundUserEmail       replacement/addLog
-clearDevInfo                  getEarningsConfig             replacement/getRMACase
+clearDevInfo                  getEarningsConfig    [404]    replacement/getRMACase
 clearTouMode                  getNewDataGraph      [404]    replacement/submitLog
 clearTouModeNew               getNewestModeInfo    [404]    saveDebugConfig
 debugUpgradeInfo              getRemotePrivilege            saveEarningsConfig
@@ -94,8 +124,14 @@ energyhub/userAddress                       flip/updateSoc
 enrollment           globalEnrollmentStatus regist
 ```
 
-Entirely unexplored. `flip/getGlobalSoc` and `flip/updateSoc` suggest remote SoC
-control by a grid operator.
+`flip/getGlobalSoc` and `flip/updateSoc` suggest remote SoC control by a grid operator.
+
+On the EU server (app 3.2.0) the read-style routes were probed with a plain GET and
+every one answers **404**: `allPrograms`, `enrollments`, `events`, `event`,
+`globalEnrollmentStatus`, `site/program`, `site/programs`, `energyhub/program`,
+`energyhub/events`, `energyhub/enrollment` and `flip/getGlobalSoc`. They are probably
+US grid programmes. The write-style routes (`regist`, `commission`, `auth/site`,
+`flip/updateSoc`, ...) and `userInfo` / `energyhub/userAddress` were not called.
 
 ## open/ (12): unauthenticated
 
@@ -142,6 +178,13 @@ afterSale/   submitRepairs
 ---
 
 ## Where the list came from
+
+Newer builds add routes, and a route's parameters live in the `ApiService` annotations. Reading them
+needs no proxy (no certificate pinning to fight): pull `base.apk` with
+`adb shell pm path <package>` / `adb pull` (EU package `com.eternalplanetenergy.epcube.eu`; only
+`base.apk` matters), then read the `classes*.dex` string pool for route strings and the
+annotation sets for `@GET` / `@POST` / `@Query` names. That is how `dynamicPrice/calcuPrice`
+(`devId`, `dynamicChargePrice`, `checkTime`) and `dynamicPrice/saveBinding` (`@Body`) were found.
 
 The app is a native Kotlin app using Retrofit; route strings sit in the `.dex`
 string tables in plain UTF-8, so no decompiler is needed. Repository class names
