@@ -46,7 +46,7 @@ Table of Contents:
 
 - **Diagnostics** - A redacted download with the last 25 API calls and which sections were degraded.
 
-- **A complete client** - `epcube_api` covers **118 routes** recovered from the Android app, with pydantic models end to end and an `epcube` command line for status, series, per-string PV and raw probes.
+- **A complete client** - `epcube_api` covers **125 routes** recovered from the Android app, with pydantic models end to end and an `epcube` command line for status, series, per-string PV and raw probes.
 
 ## Installation
 

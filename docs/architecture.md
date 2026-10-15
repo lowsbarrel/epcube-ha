@@ -138,6 +138,6 @@ accessors such as `battery_power_w`.
 ## Where the route list came from
 
 The app stores its Retrofit routes as plain strings in the APK's dex string
-tables, so all 118 of them were recovered without a decompiler. `registry.py`
+tables, so all 125 of them were recovered without a decompiler. `registry.py`
 records each one and whether it has a wrapper;
 [api-endpoints.md](api-endpoints.md) is the prose version.

@@ -58,7 +58,7 @@ ROUTES: tuple[Route, ...] = (
     _r("device/getNewestModeInfo", A),
     _r("device/getDevPcsVersion", U, "device.firmware_version"),
     _r("device/checkUpgrade", U, "device.check_upgrade"),
-    _r("device/getEarningsConfig", U, "data.earnings"),
+    _r("device/getEarningsConfig", A, "data.earnings", "404 on the EU server (app 3.2.0)"),
     *(
         _r(f"device/{name}")
         for name in (
@@ -94,6 +94,35 @@ ROUTES: tuple[Route, ...] = (
             "upgrade",
         )
     ),
+    _r(
+        "dynamicPrice/getRelation",
+        W,
+        None,
+        "the saved country / region / supplier / import + export product (EU, app 3.2.0)",
+    ),
+    _r("dynamicPrice/getCountry", W, None, "countries with Dynamic tariff support"),
+    _r("dynamicPrice/getRegionList", W, None, "param: supportCountryId"),
+    _r("dynamicPrice/getBrands", W, None, "params: supportCountryId, regionCode"),
+    _r(
+        "dynamicPrice/getProducts",
+        W,
+        None,
+        "params: brandId or brandName, regionCode or region, productType (0 import, 1 export)",
+    ),
+    _r(
+        "dynamicPrice/calcuPrice",
+        W,
+        None,
+        "GET devId[, checkTime=YYYY-MM-DD]: half-hourly import (prices) and export "
+        "(pricesExport), priceInc/priceExc (with/without VAT) in the tariff currency, local time",
+    ),
+    _r(
+        "dynamicPrice/saveBinding",
+        W,
+        None,
+        "POST JSON: devId, brandId, productBrand, supportCountryId, productCode, productCodeOut, "
+        "regionCode, ratio.fraunhofer.*; changes the saved tariff",
+    ),
     _r("user/user/base", W, "account.base", "defDevSgSn is the plant serial"),
     _r("user/user/queryFirmwareInfo", U, "account.firmware_info"),
     _r("user/user/serviceData", U, "account.service_data"),
@@ -122,30 +151,30 @@ ROUTES: tuple[Route, ...] = (
         )
     ),
     _r("vpp/userInfo", U, "vpp.user_info"),
-    _r("vpp/allPrograms", U, "vpp.programs"),
-    _r("vpp/site/programs", U, "vpp.site_programs"),
-    _r("vpp/enrollments", U, "vpp.enrollments"),
-    _r("vpp/globalEnrollmentStatus", U, "vpp.enrollment_status"),
-    _r("vpp/events", U, "vpp.events"),
-    _r("vpp/flip/getGlobalSoc", U, "vpp.global_soc", "operator-set SoC target"),
+    _r("vpp/allPrograms", A, "vpp.programs", "404 on the EU server (app 3.2.0)"),
+    _r("vpp/site/programs", A, "vpp.site_programs", "404 on the EU server (app 3.2.0)"),
+    _r("vpp/enrollments", A, "vpp.enrollments", "404 on the EU server (app 3.2.0)"),
+    _r("vpp/globalEnrollmentStatus", A, "vpp.enrollment_status", "404 on the EU server"),
+    _r("vpp/events", A, "vpp.events", "404 on the EU server (app 3.2.0)"),
+    _r("vpp/flip/getGlobalSoc", A, "vpp.global_soc", "operator-set SoC target; 404 on EU"),
     *(
         _r(f"vpp/{name}")
         for name in (
             "auth/site",
             "commission",
-            "energyhub/enrollment",
             "energyhub/event",
-            "energyhub/events",
-            "energyhub/program",
             "energyhub/regist",
             "energyhub/userAddress",
             "enrollment",
-            "event",
             "flip/updateSoc",
             "regist",
-            "site/program",
         )
     ),
+    _r("vpp/energyhub/enrollment", A, None, "404 on the EU server (app 3.2.0)"),
+    _r("vpp/energyhub/events", A, None, "404 on the EU server (app 3.2.0)"),
+    _r("vpp/energyhub/program", A, None, "404 on the EU server (app 3.2.0)"),
+    _r("vpp/event", A, None, "404 on the EU server (app 3.2.0)"),
+    _r("vpp/site/program", A, None, "404 on the EU server (app 3.2.0)"),
     _r("smartBreaker/queryDataGraph", U, "breaker.graph", "per-circuit history"),
     _r("smartBreaker/addDevice", U, "breaker.add"),
     _r("smartBreaker/updateDevice", U, "breaker.update"),
