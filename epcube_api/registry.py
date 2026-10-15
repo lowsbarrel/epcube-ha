@@ -114,7 +114,7 @@ ROUTES: tuple[Route, ...] = (
         W,
         None,
         "GET devId[, checkTime=YYYY-MM-DD]: half-hourly import (prices) and export "
-        "(pricesExport), pence incl. VAT, local time",
+        "(pricesExport), priceInc/priceExc (with/without VAT) in the tariff currency, local time",
     ),
     _r(
         "dynamicPrice/saveBinding",

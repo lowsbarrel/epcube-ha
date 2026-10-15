@@ -41,8 +41,9 @@ energy, backup and non-backup loads, EV, generator, and the flow-direction field
 ### `dynamicPrice/*` **[✓]**: the saved tariff, and the prices the cube uses in Dynamic mode
 
 Seven routes the 2.5.1 inventory did not have. Checked against a real EU account
-(app 3.2.0, the web portal's `/v1/api/` prefix serves the five read routes too).
-All are plain bearer-token calls on the usual `/api/` prefix.
+(app 3.2.0). All are plain bearer-token calls on the usual `/api/` prefix. The web
+portal's `/v1/api/` prefix serves five of the GET routes too, but only with the
+portal's own login: an app token gets HTTP 401 there.
 
 | Route | Method | Notes |
 |---|---|---|
@@ -51,7 +52,7 @@ All are plain bearer-token calls on the usual `/api/` prefix.
 | `dynamicPrice/getRegionList` | GET `devId`, `supportCountryId` | Regions of a country (`regionCode`, `regionName`) |
 | `dynamicPrice/getBrands` | GET `devId`, `supportCountryId`, `regionCode` | Suppliers in a region |
 | `dynamicPrice/getProducts` | GET `devId`, `brandName`, `region`, `productType` | `productType` 0 is import, 1 is export. The app declares `brandId` / `regionCode` for the same call |
-| `dynamicPrice/calcuPrice` | GET `devId`, optional `checkTime` | Half-hourly prices: `prices` (import) and `pricesExport`, each `{priceInc, priceExc, startTime, endTime}` in pence, local time. `checkTime` must be a plain `YYYY-MM-DD` (anything else is a 500); a day that is not published yet returns no price lists |
+| `dynamicPrice/calcuPrice` | GET `devId`, optional `checkTime`; the app also declares `dynamicChargePrice` (untested) | Half-hourly prices: `prices` (import) and `pricesExport`, each `{priceInc, priceExc, startTime, endTime}` (with and without VAT) in the tariff's currency (pence on the UK account tested; `getRelation`'s `unitDefault` names it, e.g. `€`), local time. `checkTime` must be a plain `YYYY-MM-DD` (anything else is a 500); a day that is not published yet returns no price lists; a device with no saved tariff gets `status: 500`, `Invalid device id` |
 | `dynamicPrice/saveBinding` | POST JSON | Saves the tariff. Body: `devId`, `brandId`, `productBrand`, `supportCountryId`, `productCode`, `productCodeOut`, `regionCode`, `ratio.fraunhofer.{standardImportRatio, importServiceCharge, standardExportRatio, exportServiceCharge}`. `getRelation` follows within about a minute. Returns `data: null` |
 
 What does **not** save the tariff, tested so nobody has to:
@@ -87,51 +88,48 @@ count (`gridPowerFailureNum`); this has the actual events.
 
 ---
 
-## device/ (52)
+## device/ (53)
 
 ```
 assetSave                     getAddressById                queryDataElectricity [500]
 bindDevice                    getAssetData                  queryDataElectricityV2  [HA]
 checkFirmarkVersion           getDebugConfig                queryDataGraph       [500]
 checkSn                       getDevPcsVersion              queryDataGraphV2      [✓]
-checkUpgrade                  getDevPowerCutLog     [✓]     refreshData          [405]
-checkUpgradeResult            getDeviceBoundUserEmail       replacement/addLog
-clearDevInfo                  getEarningsConfig    [404]    replacement/getRMACase
-clearTouMode                  getNewDataGraph      [404]    replacement/submitLog
-clearTouModeNew               getNewestModeInfo    [404]    saveDebugConfig
-debugUpgradeInfo              getRemotePrivilege            saveEarningsConfig
-deviceBindAddressInfo         getSettingsData      [404]    saveSettings
-deviceBoundUserByInstall      getSolarPvPower       [✓]     scanSgsn
-deviceList             [HA]   getSwitchMode        [HA]     submitDebugUpgrade
-earningsGraph          [404]  getWarranty           [✓]     submitUpgrade
-editDeviceInfo                homeDeviceInfo       [HA]     switchDevice
-editDeviceName                homeDeviceInfoWeather [500]   switchMode           [HA]
-editRemotePrivilege           netWorkInfo           [✓]     upgrade
-                              userDeviceInfo       [HA]
+checkUpgrade                  getDevPowerCutLog     [✓]     queryPriceDataGraphV2 [404]
+checkUpgradeResult            getDeviceBoundUserEmail       refreshData          [405]
+clearDevInfo                  getEarningsConfig    [404]    replacement/addLog
+clearTouMode                  getNewDataGraph      [404]    replacement/getRMACase
+clearTouModeNew               getNewestModeInfo    [404]    replacement/submitLog
+debugUpgradeInfo              getRemotePrivilege            saveDebugConfig
+deviceBindAddressInfo         getSettingsData      [404]    saveEarningsConfig
+deviceBoundUserByInstall      getSolarPvPower       [✓]     saveSettings
+deviceList             [HA]   getSwitchMode        [HA]     scanSgsn
+earningsGraph          [404]  getWarranty           [✓]     submitDebugUpgrade
+editDeviceInfo                homeDeviceInfo       [HA]     submitUpgrade
+editDeviceName                homeDeviceInfoWeather [500]   switchDevice
+editRemotePrivilege           netWorkInfo           [✓]     switchMode           [HA]
+                              userDeviceInfo       [HA]     upgrade
 ```
 
 `[404]`/`[500]`/`[405]` = tested and rejected as called; most likely need
 different parameters or a POST body rather than being absent.
 
-## vpp/ (20): virtual power plant and grid services **[?]**
+## vpp/ (20): virtual power plant and grid services
 
 ```
-allPrograms          energyhub/event        enrollments        site/program
-auth/site            energyhub/events       event              site/programs
-commission           energyhub/program      events             userInfo
-energyhub/enrollment energyhub/regist       flip/getGlobalSoc
-energyhub/userAddress                       flip/updateSoc
-enrollment           globalEnrollmentStatus regist
+allPrograms            [404]    energyhub/regist                flip/updateSoc
+auth/site                       energyhub/userAddress           globalEnrollmentStatus [404]
+commission                      enrollment                      regist
+energyhub/enrollment   [404]    enrollments            [404]    site/program           [404]
+energyhub/event                 event                  [404]    site/programs          [404]
+energyhub/events       [404]    events                 [404]    userInfo
+energyhub/program      [404]    flip/getGlobalSoc      [404]
 ```
 
 `flip/getGlobalSoc` and `flip/updateSoc` suggest remote SoC control by a grid operator.
 
-On the EU server (app 3.2.0) the read-style routes were probed with a plain GET and
-every one answers **404**: `allPrograms`, `enrollments`, `events`, `event`,
-`globalEnrollmentStatus`, `site/program`, `site/programs`, `energyhub/program`,
-`energyhub/events`, `energyhub/enrollment` and `flip/getGlobalSoc`. They are probably
-US grid programmes. The write-style routes (`regist`, `commission`, `auth/site`,
-`flip/updateSoc`, ...) and `userInfo` / `energyhub/userAddress` were not called.
+The `[404]` routes are the read-style ones, probed with a plain GET on the EU server
+(app 3.2.0); they are probably US grid programmes. The rest were not called.
 
 ## open/ (12): unauthenticated
 
