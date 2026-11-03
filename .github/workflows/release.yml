@@ -49,7 +49,7 @@ jobs:
           [ "$VERSION" = "$project" ] || { echo "::error::tag $VERSION != pyproject $project"; exit 1; }
           [ "$VERSION" = "$client" ] || { echo "::error::tag $VERSION != epcube_api $client"; exit 1; }
 
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e
         with:
           enable-cache: true
 
