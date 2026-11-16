@@ -80,7 +80,7 @@ class DeviceSummary(EpCubeModel):
                 return {}
             try:
                 parsed = json.loads(value)
-            except TypeError, ValueError:
+            except (TypeError, ValueError):
                 return {}
             return parsed if isinstance(parsed, dict) else {}
         return value or {}
@@ -168,7 +168,7 @@ class PvStrings(EpCubeModel):
                 return None
             try:
                 return float(raw)
-            except TypeError, ValueError:
+            except (TypeError, ValueError):
                 return None
 
         indexes = sorted(

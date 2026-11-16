@@ -96,6 +96,8 @@ L'API lascia a zero i propri contatori di energia della batteria, quindi **Batte
 
 ### Il client e la CLI
 
+Il client e la CLI autonomi richiedono Python 3.13 o successivo e non richiedono Home Assistant. L'integrazione richiede ancora Home Assistant 2026.3 o successivo.
+
 ```python
 import asyncio
 
@@ -158,7 +160,7 @@ Serve [uv](https://docs.astral.sh/uv/); installa da solo Python 3.14 leggendo `.
 ```bash
 git clone https://github.com/lowsbarrel/epcube-ha.git
 cd epcube-ha
-uv sync --all-extras
+uv sync --all-extras --group homeassistant
 git config core.hooksPath .githooks
 ```
 
@@ -168,7 +170,7 @@ git config core.hooksPath .githooks
 sh scripts/verify.sh
 ```
 
-Cerca segreti, applica le regole su dimensione dei file e commenti, ed esegue ruff, pyrefly (strict) e pytest con copertura del 100% di istruzioni e rami. Vedi [AGENTS.md](AGENTS.md) per le convenzioni di sviluppo, strumenti e verifica.
+Cerca segreti, applica le regole su dimensione dei file e commenti, ed esegue ruff, pyrefly (strict) e tutti i test pytest su Python 3.14 con copertura del 100% di istruzioni e rami del client. Dalla radice del repository, pytest senza argomenti seleziona solo i test del client; la suite completa include esplicitamente quelli dell'integrazione. La CI esegue anche i test del client su Python 3.13; i comandi sono in [docs/testing.md](docs/testing.md). Vedi [AGENTS.md](AGENTS.md) per le convenzioni di sviluppo, strumenti e verifica.
 
 ## Architettura
 

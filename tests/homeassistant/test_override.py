@@ -12,8 +12,7 @@ from homeassistant.exceptions import HomeAssistantError
 from custom_components.epcube import override as override_mod
 from custom_components.epcube.coordinator import EpCubeCoordinator
 from custom_components.epcube.override import HOLD, Override, OverrideManager
-
-from .conftest import MODE, Recorder
+from tests.conftest import MODE, Recorder
 
 
 class FakeStore:

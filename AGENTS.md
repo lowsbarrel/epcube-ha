@@ -8,8 +8,9 @@ reaches the whole undocumented cloud API. Two halves:
 | Client      | `epcube_api/`               | httpx transport, pydantic models, endpoint wrappers, CLI, CAPTCHA login |
 | Integration | `custom_components/epcube/` | Config flow, one coordinator, entities, services, diagnostics           |
 
-All commands run from the repo root. uv is the package manager; Python is 3.14,
-the version Home Assistant runs.
+All commands run from the repo root. uv is the package manager; development uses
+Python 3.14, the version Home Assistant runs. The standalone client supports
+Python 3.13 and later.
 
 # The shape
 
@@ -99,9 +100,9 @@ rather than re-annotating `entity_description`.
 - **One version, three places.** Bump `pyproject.toml`, `manifest.json` (version
   and requirement) and `epcube_api.__version__` together; the release workflow
   refuses a tag that disagrees with any of them.
-- **One Python.** The code targets 3.14 syntax (`except A, B:`), so the minimum
-  Home Assistant in `hacs.json` is the first release on 3.14 (2026.3). Raising
-  Python means raising that floor in the same change.
+- **Separate Python floors.** The client targets Python 3.13; integration
+  development and its Home Assistant dependency group require Python 3.14.2.
+  The minimum Home Assistant in `hacs.json` remains 2026.3.
 - **Secrets live in `.env` only**, which is gitignored; `.env.example` lists the
   variables with empty values. Never commit a token, a password or a real
   payload carrying the owner's address or coordinates.
@@ -159,9 +160,11 @@ catches credential-shaped strings. Everything else here needs review.
 # Workflow
 
 - Done means `sh scripts/verify.sh` is green: `check-secrets`,
-  `check-invariants`, `ruff check`, `ruff format --check`, `pyrefly check`, `pytest`.
-  CI runs the same script, then builds the HACS bundle and runs hassfest; the
-  release adds HACS validation.
+  `check-invariants`, `ruff check`, `ruff format --check`, `pyrefly check`, `pytest tests`.
+  Plain `pytest` selects client tests only; select `tests` for the full suite.
+  CI runs the same script on 3.14, tests the client on 3.13, builds the HACS
+  bundle and runs hassfest; the release adds HACS validation. See
+  `docs/testing.md` for the Python 3.13 test command.
 - Update `docs/` and both READMEs (`README.md`, `README-IT.md`) in the same
   change that alters behaviour or user-facing copy. `translations/en.json` is a
   copy of `strings.json`; change both.

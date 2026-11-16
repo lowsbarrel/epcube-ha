@@ -42,7 +42,7 @@ def _plant_today(live: LiveSnapshot) -> date:
     # Host TZ can be a day behind a UTC+ plant near local midnight.
     try:
         zone = ZoneInfo(live.from_timezone) if live.from_timezone else None
-    except ZoneInfoNotFoundError, ValueError:
+    except (ZoneInfoNotFoundError, ValueError):
         zone = None
     return datetime.now(zone).date()
 

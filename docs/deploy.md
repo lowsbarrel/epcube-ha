@@ -19,7 +19,8 @@ Trunk-based, and deliberately plain: one long-lived branch, `main`.
 | Job | What it does |
 | --- | --- |
 | `conventions` | PR title and every commit message must be Conventional Commits, ≤72 chars |
-| `verify` | `uv sync --locked`, `sh scripts/verify.sh`, then builds the HACS bundle |
+| `verify` | Python 3.14 full verification with Home Assistant, then builds the HACS bundle |
+| `library-python-313` | Python 3.13 default pytest selection: standalone client tests without Home Assistant |
 | `hassfest` | Home Assistant's own manifest and translation validation |
 | `ci` | the aggregate gate |
 
@@ -27,10 +28,10 @@ Trunk-based, and deliberately plain: one long-lived branch, `main`.
 blocking job. Adding a new required job means adding it to that `needs` list:
 one home, no ruleset edit, no re-running `repo-setup.sh`.
 
-The interpreter comes from `.python-version` (3.14), so CI never drifts to a
-Python that Home Assistant does not run yet. Third-party actions are pinned to a
-commit SHA and carry no comments; Dependabot bumps them, and the `uv` lockfile,
-weekly after a seven-day cooldown.
+The full verification interpreter comes from `.python-version` (3.14), while the
+client job selects 3.13 explicitly. Third-party actions are pinned to a commit
+SHA and carry no comments; Dependabot bumps them, and the `uv` lockfile, weekly
+after a seven-day cooldown.
 
 HACS validation runs in `release.yml`, after the release is published: with
 `zip_release` set, HACS reads the manifest out of the release zip, so validating

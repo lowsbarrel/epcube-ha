@@ -119,7 +119,7 @@ def _windows(call: ServiceCall, key: str) -> list[str] | None:
                     end=str(item["end"]),
                     price=float(price) if price is not None else None,
                 ).to_api()
-            except TypeError, ValueError:
+            except (TypeError, ValueError):
                 text = None
         else:
             text = None

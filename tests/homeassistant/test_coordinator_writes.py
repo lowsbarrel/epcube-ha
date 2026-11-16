@@ -6,8 +6,7 @@ import pytest
 
 from custom_components.epcube.coordinator import EpCubeCoordinator
 from epcube_api import ModeConfig
-
-from .conftest import Recorder
+from tests.conftest import Recorder
 
 
 def _mode_reads(recorder: Recorder) -> int:

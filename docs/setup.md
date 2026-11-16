@@ -95,12 +95,14 @@ energy-balance figure, which carries the battery's conversion losses.
 
 ## Development
 
-Python 3.14 (the version Home Assistant runs since 2026.3) and
-[uv](https://docs.astral.sh/uv/). `.python-version` pins the interpreter uv and
-CI use; `requires-python` in `pyproject.toml` is the floor.
+The standalone client and CLI support Python 3.13 and later without Home
+Assistant. Integration development requires Python 3.14 (the version Home
+Assistant runs since 2026.3) and [uv](https://docs.astral.sh/uv/).
+`.python-version` selects the development interpreter; `requires-python` in
+`pyproject.toml` is the client floor.
 
 ```sh
-uv sync --all-extras     # client, CAPTCHA solver, Home Assistant, tooling
+uv sync --all-extras --group homeassistant  # client, CAPTCHA solver, Home Assistant, tooling
 cp .env.example .env     # fill in region + credentials
 uv run epcube login --save
 uv run epcube status
@@ -116,8 +118,11 @@ git config core.hooksPath .githooks
 pytest. The hook and CI run exactly that script, so a green local run predicts a
 green PR. See [testing.md](testing.md).
 
-Home Assistant is a dev dependency purely so `pyrefly` can check the integration
-against real HA types. It is not needed to use the client.
+The `homeassistant` dependency group supplies Home Assistant for integration
+tests and type checking. It requires Python 3.14.2 or later and is not needed
+to use or test the standalone client. From the repository root, a plain `pytest`
+run selects client tests; the full verification script explicitly includes the
+integration tests.
 
 ## Credentials
 

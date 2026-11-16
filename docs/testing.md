@@ -4,7 +4,8 @@
 
 "Done" has one definition: everything [`scripts/verify.sh`](../scripts/verify.sh)
 runs. The pre-commit hook and CI both call that script, so it cannot mean two
-different things.
+different things. It uses Python 3.14 from `.python-version` and installs the
+`homeassistant` dependency group for integration tests and type checking.
 
 ```sh
 sh scripts/verify.sh
@@ -16,7 +17,7 @@ sh scripts/verify.sh
 | `check-invariants` | `scripts/check-invariants.py` | files over 400 lines, docstrings, comment blocks, more than 2 comments in a file, any comment in CI config, em dashes anywhere |
 | `lint` | `ruff check` + `ruff format --check` | style, import order, common bugs |
 | `types` | `pyrefly`, strict preset | wrong types, bad overrides, misuse of the Home Assistant API |
-| `test` | `pytest` | behaviour, at **100% statement and branch coverage** |
+| `test` | `pytest tests` | client and integration behaviour, at **100% client statement and branch coverage** |
 
 Coverage is part of the bar rather than an optional extra. `epcube_api` is the
 only thing between Home Assistant and an undocumented API, and an untested
@@ -39,6 +40,30 @@ Reaching 100% found four real bugs that nothing else had:
 CI adds two checks the Python toolchain cannot do: **hassfest** (manifest and
 translation validity) on every change, and **HACS validation** (that the
 published release is installable) once a release exists.
+
+From the repository root, pytest defaults to the standalone client tests in
+`tests/test_*.py`. CI runs these on Python 3.13 without Home Assistant:
+
+```sh
+uv sync --locked --python 3.13 --all-extras
+uv run --locked --python 3.13 --all-extras pytest
+```
+
+The same 100% client coverage requirement applies. Integration tests and their
+Home Assistant fixture live in `tests/homeassistant/` and are not collected by
+the default selection. To opt into the complete suite on Python 3.14, explicitly
+select both the dependency group and the tests directory:
+
+```sh
+uv run --locked --group homeassistant pytest tests
+```
+
+Selecting the dependency group installs Home Assistant; the `tests` argument
+selects the integration tests as well as the client tests. The group requires
+Python 3.14.2 or later, so selecting it on Python 3.13 fails rather than
+installing an older Home Assistant. Use a separate environment or run
+`uv sync --locked --all-extras --group homeassistant` to restore the full
+development environment after testing on 3.13.
 
 ## The offline suite
 

@@ -168,7 +168,7 @@ class AsyncTransport:
         if api_status is not None:
             try:
                 api_status = int(api_status)
-            except TypeError, ValueError:
+            except (TypeError, ValueError):
                 api_status = None
 
         if api_status is not None and api_status != 200:

@@ -359,7 +359,7 @@ class EpCubeBatteryEnergySensor(EpCubeSensorEntity, RestoreSensor):
         if isinstance(value, (int, float, str)):
             try:
                 self._restored = float(value)
-            except TypeError, ValueError:
+            except (TypeError, ValueError):
                 self._restored = 0.0
 
     @property

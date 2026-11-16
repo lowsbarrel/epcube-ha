@@ -96,6 +96,8 @@ The API leaves its battery energy counters at zero, so **Battery charged** and *
 
 ### The client and CLI
 
+The standalone client and CLI require Python 3.13 or later and do not require Home Assistant. The integration still requires Home Assistant 2026.3 or later.
+
 ```python
 import asyncio
 
@@ -158,7 +160,7 @@ Building requires [uv](https://docs.astral.sh/uv/); it installs Python 3.14 from
 ```bash
 git clone https://github.com/lowsbarrel/epcube-ha.git
 cd epcube-ha
-uv sync --all-extras
+uv sync --all-extras --group homeassistant
 git config core.hooksPath .githooks
 ```
 
@@ -168,7 +170,7 @@ git config core.hooksPath .githooks
 sh scripts/verify.sh
 ```
 
-It scans for secrets, enforces the file-size and comment rules, and runs ruff, pyrefly (strict) and pytest at 100% statement and branch coverage. See [AGENTS.md](AGENTS.md) for engineering, tooling and verification conventions.
+It scans for secrets, enforces the file-size and comment rules, and runs ruff, pyrefly (strict) and the full pytest suite on Python 3.14 at 100% client statement and branch coverage. From the repository root, a plain pytest run selects only client tests; the full suite opts in to integration tests. CI also runs the client tests on Python 3.13; see [docs/testing.md](docs/testing.md) for the commands. See [AGENTS.md](AGENTS.md) for engineering, tooling and verification conventions.
 
 ## Architecture
 

@@ -50,11 +50,23 @@ jobs:
         with:
           enable-cache: true
       - name: Install dependencies
-        run: uv sync --locked --all-extras
+        run: uv sync --locked --all-extras --group homeassistant
       - name: Verify
         run: sh scripts/verify.sh
       - name: Build the HACS bundle
         run: sh scripts/build-release.sh epcube.zip
+
+  library-python-313:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7
+        with:
+          enable-cache: true
+      - name: Install dependencies
+        run: uv sync --locked --python 3.13 --all-extras
+      - name: Test the library
+        run: uv run --locked --python 3.13 --all-extras pytest
 
   hassfest:
     runs-on: ubuntu-latest
@@ -64,12 +76,12 @@ jobs:
 
   ci:
     if: ${{ always() }}
-    needs: [conventions, verify, hassfest]
+    needs: [conventions, verify, library-python-313, hassfest]
     runs-on: ubuntu-latest
     steps:
       - name: All required jobs succeeded
         run: |
-          for r in "${{ needs.conventions.result }}" "${{ needs.verify.result }}" "${{ needs.hassfest.result }}"; do
+          for r in "${{ needs.conventions.result }}" "${{ needs.verify.result }}" "${{ needs.library-python-313.result }}" "${{ needs.hassfest.result }}"; do
             case "$r" in
               success | skipped) ;;
               *) echo "required job did not succeed: $r"; exit 1 ;;
